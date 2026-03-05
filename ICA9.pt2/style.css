@@ -1,0 +1,162 @@
+/* General Styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font: 1.2em / 1.5 sans-serif;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+.challenge {
+    margin-bottom: 60px;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.challenge h1 {
+    font-size: 1.8em;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.challenge p {
+    color: #666;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+/* ===== FLEXBOX CHALLENGES ===== */
+
+/* Challenge 1: Navigation Flexbox */
+.nav-flex {
+    max-width: 750px;
+}
+
+.nav-ul {
+    max-width: 750px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.nav-ul a:link,
+.nav-ul a:visited {
+    background-color: #4d7298;
+    border: 2px solid #77a6b6;
+    border-radius: 0.5em;
+    color: white;
+    padding: 0.5em;
+    display: inline-block;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.nav-ul a:hover {
+    background-color: #3a5578;
+}
+
+/* Challenge 2: Equal-Sized Columns */
+.flex-list2 {
+    max-width: 750px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 15px;
+}
+
+.flex-list2 li {
+    background-color: #4d7298;
+    border: 2px solid #77a6b6;
+    border-radius: 0.5em;
+    color: white;
+    padding: 0.5em;
+    flex: 1;
+}
+
+/* Challenge 3: Wrapping Items */
+.flex-list3 {
+    width: 450px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.flex-list3 li {
+    background-color: #4d7298;
+    border: 2px solid #77a6b6;
+    border-radius: 0.5em;
+    color: white;
+    padding: 0.5em;
+    margin: 0.5em;
+    flex: auto;
+}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+
+/* Tablet Breakpoint (768px and up) */
+@media (min-width: 768px) {
+    .flex-list3 {
+        width: 100%;
+        max-width: 750px;
+    }
+}
+
+/* Large Desktop (1024px and up) */
+@media (min-width: 1024px) {
+    .challenge {
+        margin-bottom: 60px;
+    }
+
+    .nav-ul {
+        max-width: none;
+    }
+
+    .flex-list2 {
+        max-width: none;
+    }
+}
+
+/* Small Mobile (320px to 479px) */
+@media (max-width: 479px) {
+    body {
+        padding: 10px;
+    }
+
+    .challenge {
+        padding: 15px;
+    }
+
+    .nav-ul {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .nav-ul li {
+        width: 100%;
+    }
+
+    .nav-ul a {
+        display: block;
+        text-align: center;
+    }
+
+    .flex-list2 {
+        flex-direction: column;
+        max-width: 100%;
+    }
+
+    .flex-list3 {
+        width: 100%;
+    }
+}
