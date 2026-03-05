@@ -1,0 +1,178 @@
+/* General Styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font: 1.2em / 1.5 sans-serif;
+    padding: 20px;
+    background-color: #f5f5f5;
+}
+
+.challenge {
+    margin-bottom: 60px;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.challenge h1 {
+    font-size: 1.8em;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.challenge p {
+    color: #666;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+/* ===== RESPONSIVE DESIGN CHALLENGE ===== */
+
+.rwd-challenge {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.rwd-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.rwd-header {
+    background-color: #4d7298;
+    color: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.rwd-header h2 {
+    margin: 0;
+}
+
+.rwd-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.rwd-article {
+    background-color: #ffffff;
+    border: 2px solid #77a6b6;
+    padding: 20px;
+    border-radius: 8px;
+    flex: 1;
+}
+
+.rwd-article h3 {
+    color: #4d7298;
+    margin-bottom: 15px;
+}
+
+.rwd-article p {
+    margin-bottom: 15px;
+    line-height: 1.6;
+    color: #333;
+    font-style: normal;
+}
+
+.rwd-sidebar {
+    background-color: #e8f0f7;
+    border: 2px solid #77a6b6;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.rwd-sidebar h3 {
+    color: #4d7298;
+    margin-bottom: 15px;
+}
+
+.rwd-sidebar p {
+    margin-bottom: 15px;
+    color: #333;
+    font-style: normal;
+}
+
+.rwd-sidebar ul {
+    list-style-position: inside;
+    padding-left: 0;
+}
+
+.rwd-sidebar li {
+    background-color: #4d7298;
+    color: white;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.rwd-footer {
+    background-color: #4d7298;
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.rwd-footer h3 {
+    margin: 0 0 10px 0;
+    color: white;
+}
+
+.rwd-footer p {
+    margin: 0;
+    color: #e8f0f7;
+    font-style: normal;
+}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+
+/* Tablet Breakpoint (768px and up) */
+@media (min-width: 768px) {
+    .rwd-main {
+        flex-direction: row;
+    }
+
+    .rwd-article {
+        flex: 2;
+    }
+
+    .rwd-sidebar {
+        flex: 1;
+    }
+}
+
+/* Large Desktop (1024px and up) */
+@media (min-width: 1024px) {
+    .challenge {
+        margin-bottom: 60px;
+    }
+}
+
+/* Small Mobile (320px to 479px) */
+@media (max-width: 479px) {
+    body {
+        padding: 10px;
+    }
+
+    .challenge {
+        padding: 15px;
+    }
+
+    .rwd-header,
+    .rwd-footer {
+        padding: 15px;
+    }
+
+    .rwd-article,
+    .rwd-sidebar {
+        padding: 15px;
+    }
+}
