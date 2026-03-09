@@ -1,0 +1,45 @@
+        body{
+            background-color: #FFCB77;
+            color: #211A1E;
+            padding: 80px;
+            
+        }
+        h1,h2,h3,h4,h5{
+             font-family: "Federant", serif;
+        }
+        h1{
+            font-size: 40px;
+        }
+        h2{
+         font-size: 32px;
+        }
+        h3{
+            font-size: 24px;
+        }
+        p{
+            font-family: "Iceland", sans-serif;
+            font-size: 16px;
+        }
+        ul{
+            margin: 32px;
+            list-style: none;
+            display: flex;
+            justify-content:space-around;
+
+        }
+        li{
+            padding: 16px;
+        }
+        a{
+            color: white;
+            padding: 24px;
+            background-color: #03440C;
+            border-radius: 16px;
+            text-decoration: none;
+            font-size: 16px;
+
+        }
+        a:hover{
+            background-color: #CA3C25;
+
+        }
