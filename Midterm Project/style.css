@@ -8,7 +8,7 @@
              font-family: "Federant", serif;
         }
         h1{
-            font-size: 40px;
+            font-size: 45px;
         }
         h2{
          font-size: 32px;
@@ -18,13 +18,14 @@
         }
         p{
             font-family: "Iceland", sans-serif;
-            font-size: 16px;
+            font-size: 20px;
         }
         ul{
             margin: 32px;
-            list-style: none;
+            list-style: center;
             display: flex;
             justify-content:space-around;
+
 
         }
         li{
@@ -42,4 +43,23 @@
         a:hover{
             background-color: #CA3C25;
 
+        }
+        .photo-grid {
+        display: flex;
+        gap: 20px;
+        }
+
+        .photo-grid img{
+        width: calc(500px);
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        border-radius: 6px;
+        display: block;
+        }
+        
+        .contact-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
         }
