@@ -141,18 +141,17 @@ body {
 }
 
 .contact-link {
-    font-family: var(--body-font);
+    font-family: var(--nav-font);
     font-size: 20px;
     color: var(--text);
     text-decoration: none;
-    transition: color 0.25s ease;
 }
 
 .contact-link:hover {
     color: var(--three);
 }
 
-/*nav styling took about a million years never let me go down a w3 rabbit hole again*/
+/*nav styling took about a million years*/
 .nav-menu {
     position: fixed;
     bottom: var(--edge-padding);
@@ -189,7 +188,7 @@ body {
     width: 0%;
     height: 2px;
     background-color: var(--four);
-    transition: width 0.25s ease;
+    transition: width 0.25s;
 }
 
 .nav-link:hover::after {
@@ -202,5 +201,49 @@ body {
     bottom: var(--edge-padding);
     right: var(--edge-padding);
     font-family: var(--nav-font);
-    font-size: 10px;
+    font-size: 12px;
+}
+
+@media (max-width: 450px) { /*checks to see if we are on phone*/
+
+    :root {
+        --edge-padding: 24px;
+    }
+
+    .name h1 {
+        font-size: 28px;
+    }
+
+    .square {
+        width: 32px;
+        height: 32px;
+        gap: 12px;
+    }
+
+    .brittpic img {
+        width: 260px;
+        height: 260px;
+    }
+
+    .abouttext p {
+        max-width: 300px;
+        font-size: 14px;
+    }
+
+    .picgrid {
+        grid-template-columns: 1fr;
+    }
+
+    .picgrid img {
+        width: 300px;
+        height: 300px;
+    }
+
+    .picmiddle {
+        padding: 100px 20px 40px 20px;
+    }
+
+    .contact-link {
+        font-size: 16px;
+    }
 }
