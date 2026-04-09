@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASTR 1200 Exam 3 Cheat Sheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #fefefe;
+    --text: #1a1a2e;
+    --accent: #2d5aa0;
+    --accent2: #c0392b;
+    --accent3: #1e8449;
+    --border: #bbb;
+    --light-bg: #f0f4f8;
+    --heading-bg: #2d5aa0;
+    --heading-text: #fff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 8.5px;
+    line-height: 1.28;
+    color: var(--text);
+    background: var(--bg);
+    padding: 6px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  .page-title {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 2px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 5px;
+  }
+
+  .section {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    break-inside: avoid;
+  }
+
+  .section-header {
+    background: var(--heading-bg);
+    color: var(--heading-text);
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 2px 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .section-header.ch16 { background: #1e8449; }
+  .section-header.ch17 { background: #c0392b; }
+  .section-header.ch18 { background: #7d3c98; }
+  .section-header.s3 { background: #d4a017; color: #1a1a2e; }
+  .section-header.math { background: #2c3e50; }
+
+  .section-body {
+    padding: 3px 5px;
+    font-size: 7.8px;
+  }
+
+  .section-body ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .section-body ul li {
+    position: relative;
+    padding-left: 8px;
+    margin-bottom: 1.5px;
+  }
+
+  .section-body ul li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .section-body ul ul li::before {
+    content: "–";
+    color: #888;
+  }
+
+  .section-body ul ul {
+    padding-left: 6px;
+  }
+
+  .key { font-weight: 700; color: var(--accent2); }
+  .formula {
+    font-family: 'IBM Plex Mono', monospace;
+    background: #eef2f7;
+    padding: 1px 3px;
+    border-radius: 2px;
+    font-size: 7.5px;
+    display: inline;
+  }
+
+  .highlight {
+    background: #fff3cd;
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+
+  .evolution-chain {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 7px;
+    background: #fdf2f2;
+    border-left: 2px solid var(--accent2);
+    padding: 2px 4px;
+    margin: 2px 0;
+    line-height: 1.35;
+  }
+
+  .hr-container {
+    grid-column: 1 / -1;
+  }
+
+  svg text { font-family: 'IBM Plex Sans', sans-serif; }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  .spectral-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7px;
+    margin: 2px 0;
+  }
+
+  .spectral-table th, .spectral-table td {
+    border: 1px solid #ccc;
+    padding: 1px 3px;
+    text-align: center;
+  }
+
+  .spectral-table th {
+    background: var(--light-bg);
+    font-weight: 700;
+  }
+
+  .spectral-table .O { background: #a8c8f0; }
+  .spectral-table .B { background: #c8ddf5; }
+  .spectral-table .A { background: #e8eef5; }
+  .spectral-table .F { background: #fdf9e8; }
+  .spectral-table .G { background: #fdf3d0; }
+  .spectral-table .K { background: #fde4c0; }
+  .spectral-table .M { background: #f5c4b8; }
+
+  .mnemonic {
+    text-align: center;
+    font-weight: 700;
+    font-size: 8px;
+    color: var(--accent2);
+    margin: 2px 0;
+    letter-spacing: 0.3px;
+  }
+
+  @media print {
+    body { font-size: 7.5px; padding: 4px; }
+    .section-body { font-size: 7px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">ASTR 1200 — EXAM 3 CHEAT SHEET (Ch 15, 16, 17, 18, S3)</div>
+
+<!-- HR DIAGRAM -->
+<div class="section hr-container">
+  <div class="section-header">H-R Diagram — Hertzsprung-Russell Diagram (Fully Labeled)</div>
+  <div style="display:flex; align-items:flex-start; gap:6px;">
+    <svg viewBox="0 0 520 340" style="width:55%; min-width:300px;" xmlns="http://www.w3.org/2000/svg">
+      <rect x="60" y="20" width="420" height="280" fill="#f8f9fb" stroke="#999" stroke-width="1"/>
+      <g stroke="#ddd" stroke-width="0.5">
+        <line x1="60" y1="80" x2="480" y2="80"/>
+        <line x1="60" y1="140" x2="480" y2="140"/>
+        <line x1="60" y1="200" x2="480" y2="200"/>
+        <line x1="60" y1="260" x2="480" y2="260"/>
+        <line x1="120" y1="20" x2="120" y2="300"/>
+        <line x1="180" y1="20" x2="180" y2="300"/>
+        <line x1="240" y1="20" x2="240" y2="300"/>
+        <line x1="300" y1="20" x2="300" y2="300"/>
+        <line x1="360" y1="20" x2="360" y2="300"/>
+        <line x1="420" y1="20" x2="420" y2="300"/>
+      </g>
+      <path d="M85,28 C125,65 185,125 265,178 C330,215 410,268 455,290
+               L475,300 C435,282 345,235 280,200 C200,155 145,95 105,45 Z"
+            fill="rgba(45,90,160,0.12)" stroke="rgba(45,90,160,0.3)" stroke-width="1"/>
+      <path d="M95,32 C135,72 195,132 275,185 C335,220 415,272 465,295"
+            stroke="#2d5aa0" stroke-width="2.5" fill="none"/>
+      <text x="310" y="215" fill="#2d5aa0" font-size="10" font-weight="700" transform="rotate(-38,310,215)">MAIN SEQUENCE</text>
+      <text x="90" y="15" fill="#4a6fa5" font-size="9" font-weight="700" text-anchor="middle">O</text>
+      <text x="145" y="15" fill="#5a88c0" font-size="9" font-weight="700" text-anchor="middle">B</text>
+      <text x="200" y="15" fill="#8899aa" font-size="9" font-weight="700" text-anchor="middle">A</text>
+      <text x="260" y="15" fill="#b8a040" font-size="9" font-weight="700" text-anchor="middle">F</text>
+      <text x="320" y="15" fill="#c89030" font-size="9" font-weight="700" text-anchor="middle">G</text>
+      <text x="385" y="15" fill="#d07020" font-size="9" font-weight="700" text-anchor="middle">K</text>
+      <text x="455" y="15" fill="#c04030" font-size="9" font-weight="700" text-anchor="middle">M</text>
+      <text x="90" y="312" fill="#555" font-size="7" text-anchor="middle">40,000K</text>
+      <text x="165" y="312" fill="#555" font-size="7" text-anchor="middle">20,000K</text>
+      <text x="260" y="312" fill="#555" font-size="7" text-anchor="middle">10,000K</text>
+      <text x="350" y="312" fill="#555" font-size="7" text-anchor="middle">5,500K</text>
+      <text x="455" y="312" fill="#555" font-size="7" text-anchor="middle">3,000K</text>
+      <text x="270" y="333" fill="#333" font-size="9" font-weight="600" text-anchor="middle">← Surface Temperature (K) — HOT to COOL →</text>
+      <text x="55" y="38" fill="#555" font-size="7" text-anchor="end">10⁶</text>
+      <text x="55" y="80" fill="#555" font-size="7" text-anchor="end">10⁴</text>
+      <text x="55" y="140" fill="#555" font-size="7" text-anchor="end">10²</text>
+      <text x="55" y="200" fill="#555" font-size="7" text-anchor="end">1 (Sun)</text>
+      <text x="55" y="260" fill="#555" font-size="7" text-anchor="end">10⁻²</text>
+      <text x="55" y="298" fill="#555" font-size="7" text-anchor="end">10⁻⁴</text>
+      <text x="14" y="170" fill="#333" font-size="9" font-weight="600" text-anchor="middle" transform="rotate(-90,14,170)">Luminosity (L☉) →</text>
+      <rect x="100" y="25" width="340" height="50" rx="8" fill="rgba(192,57,43,0.1)" stroke="rgba(192,57,43,0.4)" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="270" y="42" fill="#c0392b" font-size="9" font-weight="700" text-anchor="middle">SUPERGIANTS (Ia, Ib)</text>
+      <ellipse cx="370" cy="120" rx="100" ry="55" fill="rgba(211,132,30,0.1)" stroke="rgba(211,132,30,0.5)" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="370" y="100" fill="#b87400" font-size="9" font-weight="700" text-anchor="middle">RED GIANTS</text>
+      <text x="370" y="112" fill="#b87400" font-size="7" text-anchor="middle">(Luminosity Class III)</text>
+      <ellipse cx="180" cy="275" rx="80" ry="22" fill="rgba(100,100,180,0.1)" stroke="rgba(100,100,180,0.5)" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="180" y="272" fill="#5555aa" font-size="9" font-weight="700" text-anchor="middle">WHITE DWARFS</text>
+      <text x="180" y="283" fill="#5555aa" font-size="7" text-anchor="middle">(hot but dim → small R)</text>
+      <circle cx="330" cy="200" r="5" fill="#f4c542" stroke="#c89030" stroke-width="1.5"/>
+      <text x="330" y="196" fill="#c89030" font-size="6" text-anchor="middle" font-weight="700">☉</text>
+      <text x="345" y="197" fill="#333" font-size="7" font-weight="600">Sun (G2)</text>
+      <!-- OBAFGKM points on Main Sequence -->
+      <!-- O: x=90, ~40,000K, L~10^5.5 → y≈35 -->
+      <circle cx="90" cy="35" r="4.5" fill="#4a6fa5" stroke="#fff" stroke-width="0.8"/>
+      <text x="80" y="46" fill="#4a6fa5" font-size="6" font-weight="700" text-anchor="end">O</text>
+      <!-- B: x=145, ~20,000K, L~10^3.5 → y≈65 -->
+      <circle cx="145" cy="65" r="4" fill="#5a88c0" stroke="#fff" stroke-width="0.8"/>
+      <text x="135" y="75" fill="#5a88c0" font-size="6" font-weight="700" text-anchor="end">B</text>
+      <!-- A: x=200, ~10,000K, L~10^1.5 → y≈130 -->
+      <circle cx="200" cy="130" r="3.5" fill="#8899bb" stroke="#fff" stroke-width="0.8"/>
+      <text x="190" y="140" fill="#8899bb" font-size="6" font-weight="700" text-anchor="end">A</text>
+      <!-- F: x=260, ~7,000K, L~10^0.5 → y≈170 -->
+      <circle cx="265" cy="172" r="3.5" fill="#b8a040" stroke="#fff" stroke-width="0.8"/>
+      <text x="255" y="182" fill="#b8a040" font-size="6" font-weight="700" text-anchor="end">F</text>
+      <!-- G (Sun): already have Sun marker at 330,200 -->
+      <!-- K: x=385, ~4,500K, L~10^-0.5 → y≈235 -->
+      <circle cx="390" cy="240" r="3" fill="#d07020" stroke="#fff" stroke-width="0.8"/>
+      <text x="380" y="250" fill="#d07020" font-size="6" font-weight="700" text-anchor="end">K</text>
+      <!-- M: x=455, ~3,000K, L~10^-2 → y≈275 -->
+      <circle cx="455" cy="280" r="2.5" fill="#c04030" stroke="#fff" stroke-width="0.8"/>
+      <text x="445" y="289" fill="#c04030" font-size="6" font-weight="700" text-anchor="end">M</text>
+
+      <!-- Dashed vertical guide lines from spectral labels to MS points -->
+      <line x1="90" y1="20" x2="90" y2="35" stroke="#4a6fa5" stroke-width="0.4" stroke-dasharray="1,1"/>
+      <line x1="145" y1="20" x2="145" y2="65" stroke="#5a88c0" stroke-width="0.4" stroke-dasharray="1,1"/>
+      <line x1="200" y1="20" x2="200" y2="130" stroke="#8899bb" stroke-width="0.4" stroke-dasharray="1,1"/>
+      <line x1="265" y1="20" x2="265" y2="172" stroke="#b8a040" stroke-width="0.4" stroke-dasharray="1,1"/>
+      <line x1="330" y1="20" x2="330" y2="195" stroke="#c89030" stroke-width="0.4" stroke-dasharray="1,1"/>
+      <line x1="390" y1="20" x2="390" y2="240" stroke="#d07020" stroke-width="0.4" stroke-dasharray="1,1"/>
+      <line x1="455" y1="20" x2="455" y2="280" stroke="#c04030" stroke-width="0.4" stroke-dasharray="1,1"/>
+      <path d="M335,195 C360,175 380,150 385,130" stroke="#c0392b" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
+      <text x="395" y="145" fill="#c0392b" font-size="6" font-style="italic">evolves off MS</text>
+      <path d="M445,95 C410,120 340,145 275,175" stroke="#1e8449" stroke-width="1" fill="none" stroke-dasharray="3,2" marker-end="url(#arrowG)"/>
+      <text x="448" y="88" fill="#1e8449" font-size="6" font-style="italic">protostar→MS</text>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b"/>
+        </marker>
+        <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1e8449"/>
+        </marker>
+      </defs>
+      <line x1="62" y1="200" x2="200" y2="300" stroke="#aaa" stroke-width="0.5" stroke-dasharray="2,2"/>
+      <text x="115" y="260" fill="#888" font-size="6" transform="rotate(-35,115,260)">0.01 R☉</text>
+      <line x1="62" y1="100" x2="400" y2="300" stroke="#aaa" stroke-width="0.5" stroke-dasharray="2,2"/>
+      <text x="220" y="215" fill="#888" font-size="6" transform="rotate(-30,220,215)">1 R☉</text>
+      <line x1="62" y1="30" x2="480" y2="220" stroke="#aaa" stroke-width="0.5" stroke-dasharray="2,2"/>
+      <text x="350" y="150" fill="#888" font-size="6" transform="rotate(-24,350,150)">100 R☉</text>
+    </svg>
+
+    <div style="font-size:7.5px; line-height:1.3; flex:1;">
+      <div style="font-weight:700; color:#2d5aa0; font-size:8px; margin-bottom:2px;">KEY HR DIAGRAM FACTS:</div>
+      <ul style="list-style:none; padding:0;">
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>X-axis:</b> Temperature (decreasing L→R!)</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>Y-axis:</b> Luminosity (increasing bottom→top)</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>Main Seq:</b> diagonal band upper-left → lower-right. Stars spend ~90% of life here.</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>Mass on MS:</b> high mass = upper-left, low mass = lower-right</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>Giants:</b> upper-right (cool but very luminous → huge radius)</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>White Dwarfs:</b> lower-left (hot but dim → tiny radius)</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>Constant R lines</b> run diagonally (↗).</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>L = 4πR²σT⁴</b> — explains all positions</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>MS Turnoff:</b> In cluster, where stars leave MS. Higher turnoff = younger cluster.</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>Massive stars make many shallow H-R loops</b> as they cycle through fusion stages</li>
+        <li style="padding-left:8px; position:relative; margin-bottom:2px;"><span style="position:absolute;left:0;color:#2d5aa0;font-weight:700;">•</span><b>Protostar path:</b> starts upper-right, moves left & down to MS</li>
+      </ul>
+      <div style="margin-top:4px; border-top:1px solid #ccc; padding-top:3px;">
+        <div style="font-weight:700; color:#c0392b; font-size:8px; margin-bottom:2px;">MS LIFETIME BY SPECTRAL TYPE:</div>
+        <table style="width:100%; border-collapse:collapse; font-size:7px;">
+          <tr style="background:#eef2f7;">
+            <th style="border:1px solid #ccc; padding:1px 2px;">O</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">B</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">A</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">F</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">G</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">K</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">M</th>
+          </tr>
+          <tr style="text-align:center; font-weight:600;">
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#a8c8f0;">~1–10 Myr</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#c8ddf5;">~10–100 Myr</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#e8eef5;">~0.5–2 Gyr</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#fdf9e8;">~2–7 Gyr</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#fdf3d0;">~10 Gyr</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#fde4c0;">~20–40 Gyr</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#f5c4b8;">~100+ Gyr</td>
+          </tr>
+        </table>
+        <div style="font-weight:700; color:#2d5aa0; font-size:7.5px; margin-top:4px; margin-bottom:2px;">LUMINOSITY ON MS (in L☉):</div>
+        <table style="width:100%; border-collapse:collapse; font-size:7px;">
+          <tr style="background:#eef2f7;">
+            <th style="border:1px solid #ccc; padding:1px 2px;">O</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">B</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">A</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">F</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">G</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">K</th>
+            <th style="border:1px solid #ccc; padding:1px 2px;">M</th>
+          </tr>
+          <tr style="text-align:center; font-weight:600;">
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#a8c8f0;">10⁵–10⁶</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#c8ddf5;">10²–10⁴</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#e8eef5;">10–50</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#fdf9e8;">2–10</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#fdf3d0;">0.5–1.5</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#fde4c0;">0.1–0.5</td>
+            <td style="border:1px solid #ccc; padding:1px 2px; background:#f5c4b8;">0.001–0.08</td>
+          </tr>
+        </table>
+        <div style="font-size:6.5px; color:#777; margin-top:2px; text-align:center;">
+          <b>Myr</b> = million years (10⁶ yr) | <b>Gyr</b> = billion years (10⁹ yr) | Sun (G) ≈ 10 Gyr = 10 billion yr on MS. <b>L ∝ M³·⁵</b> so higher mass = WAY more luminous but dies WAY faster.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid" style="margin-top:5px;">
+
+<!-- CH 15 -->
+<div class="section">
+  <div class="section-header">Ch 15 — Surveying the Stars (~20%)</div>
+  <div class="section-body">
+    <ul>
+      <li><span class="key">Parallax:</span> d(pc) = 1/p(arcsec). Larger p → closer star. Only works for nearby stars.</li>
+      <li><span class="key">Apparent brightness</span> = how bright from Earth. <span class="key">Luminosity</span> = total energy output (intrinsic).</li>
+      <li><span class="key">Inverse Square Law:</span> <span class="formula">b = L / (4πd²)</span> — double distance → ¼ brightness</li>
+      <li><span class="key">Luminosity-Radius-Temp:</span> <span class="formula">L = 4πR²σT⁴</span><br/>
+        — double T → L × 16 (T⁴); double R → L × 4 (R²)</li>
+      <li><span class="key">Spectral Types:</span> OBAFGKM (see table)</li>
+      <li><span class="key">MS Lifetime:</span> <span class="formula">t ≈ M/L</span> — since L∝M³·⁵, lifetime <span class="formula">∝ M⁻²·⁵</span>. More massive = much shorter life!</li>
+      <li><span class="key">Cluster ages:</span> Find main-seq turnoff point. Higher turnoff = younger; lower = older.</li>
+    </ul>
+    <div class="mnemonic">Oh Be A Fine Girl/Guy, Kiss Me</div>
+    <table class="spectral-table">
+      <tr><th>Type</th><th>Color</th><th>Temp (K)</th><th>Mass (M☉)</th><th>Example</th></tr>
+      <tr class="O"><td><b>O</b></td><td>Blue</td><td>>30,000</td><td>>16</td><td>—</td></tr>
+      <tr class="B"><td><b>B</b></td><td>Blue-white</td><td>10k–30k</td><td>2–16</td><td>Rigel</td></tr>
+      <tr class="A"><td><b>A</b></td><td>White</td><td>7.5k–10k</td><td>1.4–2</td><td>Sirius</td></tr>
+      <tr class="F"><td><b>F</b></td><td>Yellow-white</td><td>6k–7.5k</td><td>1–1.4</td><td>Procyon</td></tr>
+      <tr class="G"><td><b>G</b></td><td>Yellow</td><td>5.2k–6k</td><td>0.8–1</td><td>Sun</td></tr>
+      <tr class="K"><td><b>K</b></td><td>Orange</td><td>3.7k–5.2k</td><td>0.5–0.8</td><td>Arcturus</td></tr>
+      <tr class="M"><td><b>M</b></td><td>Red</td><td><3,700</td><td><0.5</td><td>Proxima Cen</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- CH 16 -->
+<div class="section">
+  <div class="section-header ch16">Ch 16 — Star Birth (~20%)</div>
+  <div class="section-body">
+    <ul>
+      <li><span class="key">Molecular clouds:</span> Cold (~10–30 K), dense regions of gas & dust. Sites of star formation.</li>
+      <li><span class="key">What causes collapse?</span> Gravity overcomes thermal pressure. Triggers: shockwaves from supernovae, cloud collisions, spiral arm compression.</li>
+      <li><span class="key">3 processes during collapse:</span>
+        <ul>
+          <li><b>Heats up</b> — gravitational PE → thermal KE</li>
+          <li><b>Spins up</b> — conservation of angular momentum (shrink → spin faster)</li>
+          <li><b>Flattens out</b> — forms protostellar disk (angular mom. prevents collapse along equator)</li>
+        </ul>
+      </li>
+      <li><span class="key">On the HR diagram:</span> Protostar starts upper-right (cool, luminous, large), moves LEFT and DOWN toward MS as it contracts and heats up.</li>
+      <li><span class="key">Turn-on time:</span> High mass → MS fast (~millions yr). Low mass → slow (~billions yr).</li>
+      <li><span class="key">Mass distribution:</span> Low-mass stars far more common than high-mass (IMF).</li>
+      <li><span class="key">Low-mass limit (~0.08 M☉):</span> Below this, <span class="highlight">degeneracy pressure</span> halts contraction → <b>brown dwarf</b></li>
+      <li><span class="key">High-mass limit (~150+ M☉):</span> <span class="highlight">Radiation pressure</span> blows material away.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- KEY EQUATIONS -->
+<div class="section">
+  <div class="section-header math">Key Equations & Relationships</div>
+  <div class="section-body">
+    <ul>
+      <li><span class="formula">d = 1/p</span> — parallax (pc & arcsec)</li>
+      <li><span class="formula">b = L / (4πd²)</span> — inverse square law</li>
+      <li><span class="formula">L = 4πR²σT⁴</span> — Stefan-Boltzmann</li>
+      <li><span class="formula">V_esc = √(2GM/R)</span>
+        <ul>
+          <li>Derived from ½mv² = GMm/r</li>
+          <li>↑M → ↑V_esc; ↑R → ↓V_esc</li>
+          <li>Double M → V_esc × √2</li>
+          <li>Double R → V_esc / √2</li>
+          <li><b>Does NOT depend on mass of escaping object!</b></li>
+        </ul>
+      </li>
+      <li><span class="formula">lifetime ∝ M/L ∝ M⁻²·⁵</span></li>
+      <li><span class="formula">L ∝ M³·⁵</span> (MS mass-luminosity)</li>
+      <li><span class="key">Chandrasekhar limit:</span> <span class="formula">1.4 M☉</span> — max WD core mass</li>
+      <li><span class="key">NS upper limit:</span> <span class="formula">~3 M☉</span> core → above = BH</li>
+      <li><span class="key">Schwarzschild radius:</span> <span class="formula">R_s = 2GM/c²</span> (where V_esc = c → event horizon)</li>
+    </ul>
+    <div style="margin-top:3px; padding:2px 4px; background:#eef; border-radius:2px; font-size:7px;">
+      <b>Exam tip (from prof):</b> You won't plug & chug numbers. Know how formulas WORK — "what happens to V_esc if you double R?" Answer: V_esc decreases by factor of √2.
+    </div>
+  </div>
+</div>
+
+<!-- CH 17 -->
+<div class="section" style="grid-column: 1 / 3;">
+  <div class="section-header ch17">Ch 17 — Star Stuff / Stellar Evolution (~35%) ← BIGGEST SECTION</div>
+  <div class="section-body">
+    <div class="two-col">
+      <div>
+        <div style="font-weight:700; color:#c0392b; font-size:8px;">LOW-MASS STARS (0.1–2 M☉):</div>
+        <div class="evolution-chain">
+          1. Main Seq (H→He core, pp chain) → 2. <b>Red Giant I</b> (H shell burning,
+          inert He core slowly contracting)
+          → 3. <b>Helium Flash</b> → Horizontal Branch (He→C core via triple-alpha,
+          H shell) → 4. Double-Shell Burning → thermal pulses
+          → <b>Planetary Nebula</b> → 5. <b>White Dwarf</b> (C/O core)
+        </div>
+        <ul>
+          <li><b>Red Giant:</b> H exhausted in core → core contracts → heats → H shell ignites → outer layers expand & cool → moves RIGHT on HR</li>
+          <li><b>Helium Flash:</b> He ignites suddenly in <b>degenerate</b> core (only if M < ~2.25 M☉). Core NOT in thermal equilibrium → runaway fusion briefly</li>
+          <li><b>Horizontal Branch:</b> He fusing in core + H in shell. Stable. Hotter & less luminous than red giant tip.</li>
+          <li><b>Double Shell:</b> He & H shells alternate → thermal pulses → ejects outer layers → planetary nebula</li>
+          <li><b>White Dwarf:</b> C/O core. <span class="highlight">Electron degeneracy pressure</span>. No fusion. Slowly cools → eventually "black dwarf."</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-weight:700; color:#c0392b; font-size:8px;">HIGH-MASS STARS (>8 M☉): From Lecture</div>
+        <div class="evolution-chain">
+          1. Main Seq (H→He, <b>CNO cycle</b>) → 2. Red Giant I (H shell,
+          inert He core) → 3. Horiz Branch (<b>no He flash</b> if M>2.25,
+          smooth He core burn) → 4. Red Giant II / Supergiant
+          (He shell + H shell, inert C core)
+          → 5. Carbon flash → successive burning via <b>alpha (He)
+          capture</b>: C→O→Ne→Si→<b>Fe</b>. "Onion ring" shells.
+          → 6. Fe core → collapse <b><0.01 sec</b> → <b>SUPERNOVA</b>
+          → Neutron Star or Black Hole
+        </div>
+        <ul>
+          <li><b>Iron dead end:</b> Fe = highest binding energy. Fusion ABSORBS energy → no thermal pressure. <span class="highlight">Electron deg. pressure</span> supports core briefly until mass above too heavy.</li>
+          <li><b>Core collapse:</b> p + e⁻ → n + ν. Entire core in <0.01s! Electron deg. pressure GONE.</li>
+          <li><b>Supernova:</b> Neutron deg. pressure halts collapse abruptly → infalling atmosphere <b>bounces</b> off core + huge neutrino energy release → explosion. Disperses heavy elements through galaxy.</li>
+          <li>SN so energetic they produce elements <b>heavier than Fe</b></li>
+          <li><span class="key">CNO cycle:</span> Faster H→He fusion using C,N,O as catalysts. Dominates in high-mass stars.</li>
+        </ul>
+        <div style="font-weight:700; color:#c0392b; font-size:8px; margin-top:3px;">INTERMEDIATE-MASS (2–8 M☉):</div>
+        <ul>
+          <li><span class="highlight">"Starts like high-mass, ends like low-mass"</span></li>
+          <li>No helium flash (core not degenerate, M>2.25). No supernova. → planetary nebula → white dwarf.</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top:2px; padding:2px; background:#fef3f3; border-radius:2px; font-size:7px;">
+      <b>Key Concept:</b> At every stage ask: What's fusing? Where? Is gravity vs pressure in balance? No fusion → gravity wins → contraction → heating → next fuel? | <b>Evidence:</b> Even-numbered elements more abundant (He capture ✓). Elements beyond Fe rare (SN-made ✓). Neutrinos detected BEFORE SN1987A visible outburst (core collapse ✓). Cluster HR diagrams match turnoff predictions ✓.
+    </div>
+  </div>
+</div>
+
+<!-- CH 18 -->
+<div class="section">
+  <div class="section-header ch18">Ch 18 — Stellar Graveyard (~25%)</div>
+  <div class="section-body">
+    <ul>
+      <li><span class="key" style="color:#7d3c98;">WHITE DWARF (star < 8M☉):</span>
+        <ul>
+          <li>Gravity vs. <span class="highlight">electron degeneracy pressure</span></li>
+          <li>Core < <b>1.4 M☉</b> (Chandrasekhar limit)</li>
+          <li>Size of Earth, mass of Sun. No fusion.</li>
+          <li><b>Nova:</b> WD in binary accretes H via <b>accretion disk</b> → surface H fuses only → brightens. Star survives! Repeatable.</li>
+          <li><b>Type Ia SN:</b> WD accretes past 1.4 M☉ → electron deg. overcome → collapses → <b>carbon fusion explodes entire WD</b>. Nothing left! Standard candle.</li>
+        </ul>
+      </li>
+      <li><span class="key" style="color:#7d3c98;">NEUTRON STAR (star 8–20M☉):</span>
+        <ul>
+          <li>Gravity vs. <span class="highlight">neutron degeneracy pressure</span></li>
+          <li>Core ~1–3 M☉. Size ~<b>10 km</b> (city-sized!)</li>
+          <li>Spins fast — <b>conservation of angular momentum</b>. Can rotate 100s–1000s×/sec!</li>
+          <li><b>Pulsar</b> = rotating NS, beamed radiation, lighthouse effect. <b>All pulsars are NS but NOT all NS are pulsars!</b> (Crab Nebula pulsar = evidence)</li>
+          <li><b>X-ray binary:</b> Accretion disk → continuous X-rays from hot disk</li>
+          <li><b>X-ray burster:</b> Explosive <b>He fusion</b> on NS surface → X-ray burst</li>
+        </ul>
+      </li>
+      <li><span class="key" style="color:#7d3c98;">BLACK HOLE (star > 20M☉):</span>
+        <ul>
+          <li>Core > 3 M☉ → <b>gravity wins over everything</b></li>
+          <li>Collapses to singularity (infinitely small point)</li>
+          <li><b>Event horizon</b> = where V_esc = c. NOT a hard surface — "distance of no return." Inside is outside observable universe.</li>
+        </ul>
+      </li>
+      <li><span class="key" style="color:#7d3c98;">ALGOL PARADOX:</span>
+        <ul>
+          <li>Less massive star more evolved? → <b>Mass transfer!</b> Originally more massive star became RG, poured mass onto companion. Now 0.8 M☉ RG + 3.7 M☉ MS star.</li>
+        </ul>
+      </li>
+    </ul>
+    <div style="margin-top:2px; font-size:7px; background:#f3eef8; padding:2px 4px; border-radius:2px;">
+      <b>Nova vs SN:</b> Nova = surface H fusion on WD, survives, repeatable. Type Ia SN = WD destroyed (>1.4M☉, carbon detonation). Type II SN = core-collapse of massive star (>8M☉), leaves NS or BH.
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- BOTTOM ROW -->
+<div class="grid" style="margin-top:5px; grid-template-columns: 1fr 1fr;">
+
+<div class="section">
+  <div class="section-header s3">S3 — Spacetime & Gravity / General Relativity (~5%)</div>
+  <div class="section-body">
+    <ul>
+      <li><span class="key">Equivalence Principle (Central idea of GR):</span> Effects of gravity and acceleration are <b>equivalent</b> — not merely similar! Person in closed room can't distinguish Earth's surface from accelerating at 1g in space. Einstein: "happiest thought of my life."</li>
+      <li><span class="key">Elevator thought experiments (from lecture):</span>
+        <ul>
+          <li>Elevator accelerates up → scale reads MORE (weight appears to increase)</li>
+          <li>Cable breaks, free fall → scale reads ZERO (why ISS astronauts feel weightless!)</li>
+          <li>Light beam crossing accelerating elevator → appears to <b>curve downward</b> from inside</li>
+        </ul>
+      </li>
+      <li><span class="key">Key logic chain:</span> Light bends in accelerating frame + equivalence principle = <b>light bends due to gravity!</b></li>
+      <li><span class="key">1919 Solar Eclipse:</span> Star positions shifted near Sun (1.75 arcsec deflection) — confirmed GR prediction. Made Einstein world-famous.</li>
+      <li><span class="key">Gravitational Lensing:</span> Massive foreground object bends background light → multiple images, arcs, Einstein rings/crosses. Observed by HST & JWST.</li>
+      <li><span class="key">Spacetime Curvature:</span> Mass curves spacetime (rubber sheet analogy). Objects follow shortest path (geodesic). <b>Gravity IS the curvature of spacetime, NOT a force at a distance.</b> "Matter tells space how to curve, space tells matter how to move" — John Wheeler.</li>
+      <li><span class="key">Gravitational redshift:</span> Light climbing out of gravity well loses energy → shifts redder. Observed in Sun & Sirius B (white dwarf).</li>
+    </ul>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header" style="background:#555;">Quick-Reference: Stellar Endpoints + Evidence</div>
+  <div class="section-body">
+    <table class="spectral-table" style="font-size:7.5px;">
+      <tr><th>Initial Star Mass</th><th>Death</th><th>Remnant</th><th>Supported By</th><th>Core Limit</th></tr>
+      <tr><td>< 0.08 M☉</td><td>Never ignites</td><td>Brown Dwarf</td><td>Deg. pressure</td><td>—</td></tr>
+      <tr><td>0.08–8 M☉</td><td>Planetary Neb.</td><td><b>White Dwarf</b></td><td>Electron deg.</td><td>< 1.4 M☉</td></tr>
+      <tr><td>8–20 M☉</td><td>Type II SN</td><td><b>Neutron Star</b></td><td>Neutron deg.</td><td>1–3 M☉</td></tr>
+      <tr><td>> 20 M☉</td><td>Type II SN</td><td><b>Black Hole</b></td><td>Nothing!</td><td>> 3 M☉</td></tr>
+    </table>
+    <div style="margin-top:3px; font-size:7px; text-align:center; font-weight:600; color:#555;">
+      ⚠ Limits refer to CORE/REMNANT mass, not original star mass!
+    </div>
+    <div style="margin-top:2px; padding:2px; background:#eef; border-radius:2px; font-size:7px;">
+      <b>SN Types:</b> Type Ia = WD in binary exceeds 1.4 M☉ → carbon detonation, WD destroyed, no remnant, standard candle. Type II = core collapse of massive star (>8 M☉), leaves NS or BH.
+    </div>
+    <div style="margin-top:2px; padding:2px; background:#fff3e0; border-radius:2px; font-size:7px;">
+      <b>Life cycle:</b> Molecular Cloud → Protostar → Main Seq → Giant/Supergiant → Death (PN or SN) → Remnant (WD/NS/BH). Ejected gas enriches next generation! SN shockwaves can trigger new star formation.
+    </div>
+    <div style="margin-top:2px; padding:2px; background:#e8f5e9; border-radius:2px; font-size:7px;">
+      <b>Key Evidence:</b> Cluster HR turnoffs ✓ | Planetary nebulae ✓ | Crab Nebula pulsar in SN remnant ✓ | Even-Z elements more abundant (He capture) ✓ | Elements > Fe rare (SN-made) ✓ | SN1987A neutrinos detected before light ✓ | Gravitational redshift of Sun & Sirius B ✓ | 1919 eclipse light bending ✓ | Gravitational lenses (JWST) ✓
+    </div>
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>
