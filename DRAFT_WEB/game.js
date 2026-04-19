@@ -10,9 +10,8 @@ const ctx    = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height; // 1200, 600
 ctx.imageSmoothingEnabled = false; // nearest-neighbour scaling — keeps pixel art crisp
 
-// ═════════════════════════════════════════════════════════════════════════════
+
 //  TUNING — every meaningful size, speed, and darkness lives here
-// ═════════════════════════════════════════════════════════════════════════════
 
 // ── Background darkness overlays (0=transparent, 1=solid black) ─────────────
 const OVERLAY_MENU  = 0.96; // start screen + game-over screen darkness
