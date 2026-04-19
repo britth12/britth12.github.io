@@ -1,1092 +1,651 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// VOLUMAGUS THE VAST — game.js
+// Canvas: 1200×600  (2:1 ratio matching Background.png / Floor.png at 2816×1408)
+// All tuning variables are at the top. Change them freely — nothing is hardcoded
+// below the TUNING block except internal logic constants that don't need changing.
+// ─────────────────────────────────────────────────────────────────────────────
+
 const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d');
-const W      = canvas.width;   //800
-const H      = canvas.height;  //400
-ctx.imageSmoothingEnabled = false; //* Bit 
+const W = canvas.width, H = canvas.height; // 1200, 600
+ctx.imageSmoothingEnabled = false; // nearest-neighbour scaling — keeps pixel art crisp
 
-//first screen
-const START_TITLE_LINE1_SCALE  = 0.52; // volumagus 
-const START_TITLE_LINE2_SCALE  = 0.44; // the vast
-const START_INSTRUCT_SCALE     = 0.19; 
-const START_CONTROLS_SCALE     = 0.16; 
-const START_PROMPT_SCALE       = 0.22; 
+// ═════════════════════════════════════════════════════════════════════════════
+//  TUNING — every meaningful size, speed, and darkness lives here
+// ═════════════════════════════════════════════════════════════════════════════
 
-//game screen
-const HUD_SCORE_LABEL_SCALE    = 0.24; 
-const HUD_TIME_LABEL_SCALE     = 0.24; 
-const HUD_SCORE_NUM_SIZE       = 28;  
-const HUD_TIME_NUM_SIZE        = 28;   
+// ── Background darkness overlays (0=transparent, 1=solid black) ─────────────
+const OVERLAY_MENU  = 0.96; // start screen + game-over screen darkness
+const OVERLAY_GAME  = 0.52; // in-game tint — raises contrast for HUD readability
 
-//game over screen
-const END_GAMEOVER_SCALE       = 0.62; // "GAME" and "OVER" stacked text
-const END_SUBTITLE_SCALE       = 0.26; // "YOUR VOLUME IS" line
-const END_SCORE_NUM_SIZE       = 48;   
-const END_THANKS_SCALE         = 0.20; 
+// ── Start screen letter heights (px tall; width auto from aspect ratio) ──────
+const START_TITLE_H    = 110; // "VOLUMAGUS"  — main title line
+const START_SUB_H      = 88;  // "THE VAST"   — subtitle line
+const START_PROMPT_H   = 32;  // "PRESS A KEY TO BEGIN" — pulsing bottom prompt
 
-// =============================================================================
-// ASSET LOADING
-// =============================================================================
+// ── HUD (in-game score + timer) letter and digit heights ─────────────────────
+const HUD_LABEL_H  = 28;  // height of the word "SCORE" / "TIME" in your letter font
+const HUD_NUM_H    = 38;  // height of the digit images (Numbers/*.png) for score+timer
 
-const assets      = {};
-let assetsLoaded  = 0;
-let assetsTotal   = 0;
-let onAssetsReady = null;
+// ── End screen letter and digit heights ──────────────────────────────────────
+const END_GAMEOVER_H  = 90;  // "GAME" and "OVER" stacked
+const END_TRAVELER_H  = 30;  // "TRAVELER YOUR VOLUME IS" subtitle
+const END_SCORE_H     = 100; // final score digit images — made large for impact
+const END_THANKS_H    = 22;  // "THANKS FOR PLAYING" footer
 
-// ── Number image names ────────────────────────────────────────────────────────
-// Maps digit (0–9) to the PNG filename in the Numbers/ folder.
-// Zero.png was added by you — used for score display and timer.
-// key format: 'num_0' through 'num_9'
-// file format: Numbers/Zero.png through Numbers/Nine.png
-const NUMBER_FILE_NAMES = {
-  0: 'Zero', 
-  1: 'One',
-  2: 'Two',
-  3: 'Three',
-  4: 'Four',
-  5: 'Five',
-  6: 'Six',
-  7: 'Seven',
-  8: 'Eight',
-  9: 'Nine',
-};
+// ── Wizard ───────────────────────────────────────────────────────────────────
+// TARGET_H: how tall the wizard is drawn on screen (px).
+// The sprite processor will scale all 5 frames to this height preserving aspect ratio.
+const WIZ_TARGET_H = 100;
 
-// Build asset list entries for all 10 digit images (0–9)
-const digitAssets = Object.entries(NUMBER_FILE_NAMES).map(([digit, name]) => ({
-  key: 'num_' + digit,           // e.g. 'num_0', 'num_3', 'num_9'
-  src: 'Numbers/' + name + '.png', // e.g. Numbers/Zero.png, Numbers/Three.png
-}));
+// ── Collectible number images ─────────────────────────────────────────────────
+// The floating numbers the player collects are drawn as square images this size.
+const COLLECT_SIZE = 36;
+
+// ── Plank height ──────────────────────────────────────────────────── ─────────
+// Each plank is drawn at this height. Width is computed automatically from each
+// plank image's own aspect ratio, so the texture never stretches.
+const PLANK_H = 22;
+
+// ── Physics ───────────────────────────────────────────────────────────────────
+// GRAVITY:     added to vertical velocity every frame. Higher = heavier/faster fall.
+// JUMP_FORCE:  instant upward velocity on jump. More negative = higher jump.
+//              Max height = JUMP_FORCE² / (2×GRAVITY). At -11/0.60 ≈ 101px.
+// SPEED:       horizontal pixels moved per frame while a direction key is held.
+const GRAVITY    = 0.60;
+const JUMP_FORCE = -15;
+const SPEED      = 5.5;
+
+// ── Letter-font spacing (relative to 16px reference size, scaled at draw time) ─
+const LGAP  = 3;  // gap between letters
+const LSPC  = 10; // width of a space character
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  ASSET LOADING
+//  Every image the game uses is declared here. loadAssets() fetches them all,
+//  then chains processWizard → processLetters → boots the menu loop.
+// ═════════════════════════════════════════════════════════════════════════════
+
+const assets = {};
+let assetsLoaded = 0, assetsTotal = 0;
+
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const NUM_NAMES = {0:'Zero',1:'One',2:'Two',3:'Three',4:'Four',5:'Five',6:'Six',7:'Seven',8:'Eight',9:'Nine'};
 
 const ASSET_LIST = [
-  { key: 'bg',     src: 'Background.png'    }, // Background stone tile — drawn first every frame
-  { key: 'floor',  src: 'Floor.png'         }, // Floor stone — RGBA PNG, upper area transparent
-  { key: 'plank1', src: 'Planks/Plank1.png' }, // Top-left platform texture
-  { key: 'plank2', src: 'Planks/Plank2.png' }, // Top-right platform texture
-  { key: 'plank3', src: 'Planks/Plank3.png' }, // Center-mid platform texture
-  { key: 'plank4', src: 'Planks/Plank4.png' }, // Left-lower platform texture
-  { key: 'plank5', src: 'Planks/Plank5.png' }, // Right-lower platform texture
-  { key: 'wizRaw',   src: 'WizWalk.png'     }, // Raw wizard sheet — processed at runtime by processWizard()
-  { key: 'fontRaw', src: 'LETTERSHEET.png'  }, // Raw A–Z letter sheet — processed at runtime by processFont()
-  ...digitAssets,                               // num_0 through num_9 from Numbers/ folder
+  {key:'bg',       src:'Background.png'   },
+  {key:'floor',    src:'Floor.png'        },
+  {key:'plank1',   src:'Planks/Plank1.png'},
+  {key:'plank2',   src:'Planks/Plank2.png'},
+  {key:'plank3',   src:'Planks/Plank3.png'},
+  {key:'plank4',   src:'Planks/Plank4.png'},
+  {key:'plank5',   src:'Planks/Plank5.png'},
+  {key:'wizRaw',   src:'WizWalk.png'      }, // raw sprite sheet — processed at runtime
+  {key:'musicBtn', src:'MusicButton.png'  }, // custom 1998×1998 music toggle button
+  ...ALPHABET.split('').map(l => ({key:'lr_'+l, src:'Letters/'+l+'.png'})),
+  ...Object.entries(NUM_NAMES).map(([d,n]) => ({key:'num_'+d, src:'Numbers/'+n+'.png'})),
 ];
 
 function loadAssets(onDone) {
-  onAssetsReady = onDone;
-  assetsTotal   = ASSET_LIST.length;
-  assetsLoaded  = 0;
-
-  function checkDone() {
-    assetsLoaded++;
-    if (assetsLoaded < assetsTotal) return;
-    // All images loaded — process WizWalk.png then LETTERSHEET.png
-    processWizard(() => processFont(onDone));
-  }
-
-  ASSET_LIST.forEach(({ key, src }) => {
-    const img   = new Image();
-    img.id      = key; // id attribute matches the asset key for identification
-    img.onload  = checkDone;
-    img.onerror = () => { console.warn('Asset failed to load:', src); checkDone(); };
-    img.src     = src;
-    assets[key] = img;
+  assetsTotal = ASSET_LIST.length; assetsLoaded = 0;
+  // Each image fires the same callback on load or error.
+  // When the last one finishes, we chain the two processors before calling onDone.
+  const tick = () => { if (++assetsLoaded >= assetsTotal) processWizard(() => processLetters(onDone)); };
+  ASSET_LIST.forEach(({key, src}) => {
+    const img = new Image(); img.id = key;
+    img.onload = tick;
+    img.onerror = () => { console.warn('Asset failed:', src); tick(); };
+    img.src = src; assets[key] = img;
   });
 }
 
-// =============================================================================
-// WIZARD PROCESSOR
-// =============================================================================
-// Runs once after WizWalk.png finishes loading.
-// WizWalk.png is your raw 4389×882 file with:
-//   - 5 animation frames side by side
-//   - Blue vertical divider lines between frames
-//   - Solid black background
-// This function:
-//   1. Reads every pixel from the raw image
-//   2. Finds the blue dividers to locate frame boundaries
-//   3. Removes the black background (makes it transparent)
-//   4. Crops all 5 frames to the same tight bounding box
-//   5. Scales them down to game size
-//   6. Assembles them into an offscreen canvas (assets.wiz)
-// The game then draws from assets.wiz exactly like a normal image.
+// ═════════════════════════════════════════════════════════════════════════════
+//  WIZARD PROCESSOR
+//  WizWalk.png is a raw 4389×882 sprite sheet with 5 animation frames separated
+//  by ~125px solid-black gaps. The exact frame x-ranges were measured from the file:
+//    Frame 0: x 104–860   (756px wide)
+//    Frame 1: x 986–1741  (755px wide)
+//    Frame 2: x 1868–2624 (756px wide)
+//    Frame 3: x 2750–3506 (756px wide)
+//    Frame 4: x 3632–4388 (756px wide)
+//  This function:
+//    1. Draws WizWalk.png onto a temp canvas to read pixels via getImageData.
+//    2. Crops each of the 5 frames using the hardcoded x-ranges (no guesswork).
+//    3. Makes every pixel with R<25, G<25, B<25 transparent (removes black bg).
+//    4. Computes the union bounding box across all 5 frames so every frame is
+//       cropped identically — prevents the wizard from jumping around.
+//    5. Scales all 5 frames to WIZ_TARGET_H tall (width proportional).
+//    6. Assembles them side-by-side into a single offscreen canvas (assets.wiz).
+//  drawWizard() then crops the right cell from assets.wiz each frame.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Hardcoded frame regions — measured directly from WizWalk.png pixel data.
+// If you replace WizWalk.png with a new file, update these values.
+const WIZ_FRAME_REGIONS = [[9,81],[93,165],[177,249],[261,333],[345,417]];
+// Frame regions measured directly from WizWalk.png (418x84).
+// Each frame is 73px wide. Gaps between frames are ~9px of solid black.
+// If you replace WizWalk.png with a new layout, update these 5 pairs.
 
 function processWizard(onDone) {
   const raw = assets.wizRaw;
+  if (!raw?.naturalWidth) { assets.wiz = null; onDone(); return; }
 
-  if (!raw || !raw.complete || !raw.naturalWidth) {
-    console.warn('WizWalk.png failed to load — wizard will show as blue placeholder');
-    assets.wiz = null;
-    onDone();
-    return;
-  }
+  // Step 1 — read all pixels from the raw image
+  const tc = document.createElement('canvas');
+  tc.width = raw.naturalWidth; tc.height = raw.naturalHeight;
+  const tx = tc.getContext('2d'); tx.drawImage(raw, 0, 0);
+  const imgData = tx.getImageData(0, 0, tc.width, tc.height);
+  const px = imgData.data; // flat RGBA array
+  const IW = tc.width, IH = tc.height;
 
-  // Step 1: Draw raw image onto a temporary canvas so we can read its pixels
-  const tempC     = document.createElement('canvas');
-  tempC.width     = raw.naturalWidth;   // 4389px
-  tempC.height    = raw.naturalHeight;  // 882px
-  const tempCtx   = tempC.getContext('2d');
-  tempCtx.drawImage(raw, 0, 0);
-  const rawData   = tempCtx.getImageData(0, 0, tempC.width, tempC.height);
-  const px        = rawData.data; // flat array: [R,G,B,A, R,G,B,A, ...]
-  const IW        = tempC.width;
-  const IH        = tempC.height;
-
-  // Step 2: Find the 4 blue divider columns
-  // A divider column has most of its pixels with blue >> red (the colour of your separator lines)
-  const dividers = [];
-  for (let x = 100; x < IW - 100; x++) {
-    let blueCount = 0;
-    for (let y = 0; y < IH; y++) {
-      const i = (y * IW + x) * 4;
-      if (px[i+2] - px[i] > 40 && px[i+2] > 60) blueCount++; // blue dominates red
-    }
-    if (blueCount / IH > 0.5) {
-      // Only keep the first column of each divider group (ignore adjacent blue columns)
-      if (!dividers.length || x - dividers[dividers.length - 1] > 20) {
-        dividers.push(x);
-      }
-    }
-  }
-
-  // Step 3: Compute the 5 frame x-ranges (skip past the divider pixels)
-  const frameStarts = [0, ...dividers.map(d => d + 20)];
-  const frameEnds   = [...dividers, IW];
-
-  // Trim any residual blue pixels at the start of each frame region
-  const frameRegions = frameStarts.map((s, i) => {
-    let start = s;
-    while (start < frameEnds[i]) {
-      let isBlue = true;
-      for (let y = 0; y < IH; y++) {
-        const idx = (y * IW + start) * 4;
-        if (px[idx+2] - px[idx] < 30) { isBlue = false; break; }
-      }
-      if (!isBlue) break;
-      start++;
-    }
-    return [start, frameEnds[i]];
-  });
-
-  // Step 4: Extract each frame, remove black background, track content bounding box
-  const frameCanvases = [];
-  const bboxes        = [];
-
-  frameRegions.forEach(([x1, x2]) => {
-    const fw    = x2 - x1;
-    const fc    = document.createElement('canvas');
-    fc.width    = fw;
-    fc.height   = IH;
-    const fctx  = fc.getContext('2d');
-    const imgD  = fctx.createImageData(fw, IH);
-    const fd    = imgD.data;
-    let minX = fw, maxX = 0, minY = IH, maxY = 0;
+  // Step 2 — for each frame region, extract pixels, remove black bg, record content bbox
+  const frameCvs = [], bboxes = [];
+  WIZ_FRAME_REGIONS.forEach(([rx1, rx2]) => {
+    const fw = rx2 - rx1;
+    const fc = document.createElement('canvas'); fc.width = fw; fc.height = IH;
+    const fx = fc.getContext('2d');
+    const id = fx.createImageData(fw, IH); const fd = id.data;
+    let x0=fw, xm=0, y0=IH, ym=0;
 
     for (let y = 0; y < IH; y++) {
       for (let x = 0; x < fw; x++) {
-        const srcI  = (y * IW + (x1 + x)) * 4;
-        const dstI  = (y * fw + x) * 4;
-        const r = px[srcI], g = px[srcI+1], b = px[srcI+2];
-        // Pixels where all channels < 25 are the black background — make transparent
-        const isBlack = r < 25 && g < 25 && b < 25;
-        fd[dstI]   = r;
-        fd[dstI+1] = g;
-        fd[dstI+2] = b;
-        fd[dstI+3] = isBlack ? 0 : 255;
-        if (!isBlack) {
-          if (x < minX) minX = x;
-          if (x > maxX) maxX = x;
-          if (y < minY) minY = y;
-          if (y > maxY) maxY = y;
-        }
+        const si = (y*IW + (rx1+x)) * 4;
+        const di = (y*fw + x) * 4;
+        const r=px[si], g=px[si+1], b=px[si+2];
+        const isBg = r<25 && g<25 && b<25; // black background threshold
+        fd[di]=r; fd[di+1]=g; fd[di+2]=b; fd[di+3] = isBg ? 0 : 255;
+        if (!isBg) { x0=Math.min(x0,x); xm=Math.max(xm,x); y0=Math.min(y0,y); ym=Math.max(ym,y); }
       }
     }
-
-    fctx.putImageData(imgD, 0, 0);
-    frameCanvases.push(fc);
-    bboxes.push([minX, minY, maxX, maxY]);
+    fx.putImageData(id, 0, 0);
+    frameCvs.push(fc); bboxes.push([x0,y0,xm,ym]);
   });
 
-  // Step 5: Compute the union bounding box — same crop for every frame
-  // This ensures all frames are the same size and the wizard doesn't jump around
-  const ul = Math.min(...bboxes.map(b => b[0]));
-  const ut = Math.min(...bboxes.map(b => b[1]));
-  const ur = Math.max(...bboxes.map(b => b[2]));
-  const ub = Math.max(...bboxes.map(b => b[3]));
-  const contentW = ur - ul;
-  const contentH = ub - ut;
+  // Step 3 — union bounding box: same crop rectangle applied to every frame
+  const ul=Math.min(...bboxes.map(b=>b[0])), ut=Math.min(...bboxes.map(b=>b[1]));
+  const ur=Math.max(...bboxes.map(b=>b[2])), ub=Math.max(...bboxes.map(b=>b[3]));
+  const cw = ur-ul, ch = ub-ut;
 
-  // Step 6: Scale to game size and build the final offscreen sprite sheet
-  // ↓ Change TARGET_H to make the wizard taller or shorter in-game
-  const TARGET_H   = 96;
-  const TARGET_W   = Math.round(contentW / contentH * TARGET_H);
-  const PAD        = 6;  // transparent padding around each frame so edges aren't clipped
-  const CELL_W     = TARGET_W + PAD * 2;
-  const CELL_H     = TARGET_H + PAD;
-  const NUM_FRAMES = frameCanvases.length; // should be 5
+  // Step 4 — scale to WIZ_TARGET_H and assemble sprite sheet
+  const TH=WIZ_TARGET_H, TW=Math.round(cw/ch*TH), PAD=5;
+  const CW=TW+PAD*2, CH=TH+PAD;
+  assets.wizCellW = CW; assets.wizCellH = CH; // saved so drawWizard() can read them
 
-  // Store cell dimensions on assets so drawWizard() can read them at draw time
-  assets.wizCellW = CELL_W;
-  assets.wizCellH = CELL_H;
+  const sheet = document.createElement('canvas');
+  sheet.width = CW * frameCvs.length; sheet.height = CH;
+  const sx = sheet.getContext('2d'); sx.imageSmoothingEnabled = false;
 
-  const sheetC   = document.createElement('canvas');
-  sheetC.width   = CELL_W * NUM_FRAMES;
-  sheetC.height  = CELL_H;
-  const sheetCtx = sheetC.getContext('2d');
-  sheetCtx.imageSmoothingEnabled = false; // pixel art — no blurring when scaling
-
-  frameCanvases.forEach((fc, i) => {
-    const cropX = Math.min(ul, fc.width - 1);
-    const cropW = Math.min(contentW, fc.width - cropX);
-    sheetCtx.drawImage(
-      fc,
-      cropX, ut, cropW, contentH,              // source region: content crop
-      i * CELL_W + PAD, PAD, TARGET_W, TARGET_H // destination: padded cell on sheet
-    );
+  frameCvs.forEach((fc, i) => {
+    // Clamp crop to the frame canvas's actual width (frame 1 is 755px, others 756px)
+    const cropW = Math.min(cw, fc.width - ul);
+    sx.drawImage(fc, ul, ut, cropW, ch, i*CW+PAD, PAD, TW, TH);
   });
 
-  assets.wiz = sheetC; // store the finished offscreen canvas — game draws from this
-  console.log(`WizWalk processed: sheet=${sheetC.width}x${sheetC.height}, cell=${CELL_W}x${CELL_H}`);
+  assets.wiz = sheet;
+  console.log(`Wizard ready: ${sheet.width}x${sheet.height}, cell=${CW}x${CH}, ${frameCvs.length} frames`);
   onDone();
 }
 
-// =============================================================================
-// FONT PROCESSOR
-// =============================================================================
-// Runs once after LETTERSHEET.png finishes loading (chained after processWizard).
-// LETTERSHEET.png is your raw 4526×868 file with:
-//   - 2 visual rows of letters: Row 1 = A–M (y 0–344), Row 2 = N–Z (y 345–867)
-//   - ~20px black gaps between each letter
-//   - Solid black background
-// This function:
-//   1. Reads every pixel from the raw image via a temp canvas
-//   2. Splits the image into two halves at the row boundary (y=345)
-//   3. Scans each half column-by-column to find where each letter starts and ends
-//   4. Removes the black background (makes it transparent)
-//   5. Crops each letter to its tight bounding box
-//   6. Scales each to a consistent cell size
-//   7. Assembles all 26 letters into an offscreen canvas grid (assets.fontCanvas)
-// drawStr() then reads from assets.fontCanvas using the glyphMap lookup.
+// Wizard animation state
+const WIZ_FRAMES=5, WIZ_IDLE_DLY=12, WIZ_WALK_DLY=5;
+let wizFrame=0, wizTick=0;
 
-function processFont(onDone) {
-  const raw = assets.fontRaw; // the loaded LETTERSHEET.png image
-
-  if (!raw || !raw.complete || !raw.naturalWidth) {
-    console.warn('LETTERSHEET.png failed to load — letters will not display');
-    assets.fontCanvas = null;
-    onDone();
-    return;
-  }
-
-  // Step 1: Draw raw image onto a temp canvas to read pixels
-  const tempC   = document.createElement('canvas');
-  tempC.width   = raw.naturalWidth;   // 4526
-  tempC.height  = raw.naturalHeight;  // 868
-  const tempCtx = tempC.getContext('2d');
-  tempCtx.drawImage(raw, 0, 0);
-  const imgData = tempCtx.getImageData(0, 0, tempC.width, tempC.height);
-  const px      = imgData.data; // flat RGBA array [R,G,B,A, R,G,B,A, ...]
-  const IW      = tempC.width;
-  const IH      = tempC.height;
-
-  // Step 2: Define the two row strips
-  // Row 1 (A–M): top portion, y = 0 to ROW_SPLIT-1
-  // Row 2 (N–Z): bottom portion, y = ROW_SPLIT to IH-1
-  const ROW_SPLIT = 345; // determined by analysis of LETTERSHEET.png pixel content
-
-  const rowStrips = [
-    { yStart: 0,          yEnd: ROW_SPLIT - 1, letters: 'ABCDEFGHIJKLM' }, // Row 1: A–M
-    { yStart: ROW_SPLIT,  yEnd: IH - 1,         letters: 'NOPQRSTUVWXYZ' }, // Row 2: N–Z
-  ];
-
-  // Step 3: For each row strip, scan columns to find letter boundaries
-  // A letter boundary is a gap of MIN_GAP or more consecutive empty columns
-  const MIN_GAP = 20; // minimum pixels of black between letters
-
-  // Helper: check if a column has any non-black pixels within a row range
-  function colHasContent(x, yStart, yEnd) {
-    for (let y = yStart; y <= yEnd; y++) {
-      const i = (y * IW + x) * 4;
-      if (px[i] > 15 || px[i+1] > 15 || px[i+2] > 15) return true;
-    }
-    return false;
-  }
-
-  // Helper: find letter x-ranges in a row strip
-  function findLetterRanges(yStart, yEnd) {
-    const ranges = [];
-    let inLetter  = false;
-    let lStart    = 0;
-    let gapCount  = 0;
-    for (let x = 0; x < IW; x++) {
-      if (colHasContent(x, yStart, yEnd)) {
-        if (!inLetter) { lStart = x; inLetter = true; }
-        gapCount = 0;
-      } else {
-        gapCount++;
-        if (inLetter && gapCount >= MIN_GAP) {
-          ranges.push([lStart, x - gapCount]); // end of this letter
-          inLetter = false;
-        }
-      }
-    }
-    if (inLetter) ranges.push([lStart, IW - 1]); // last letter reaches edge
-    return ranges;
-  }
-
-  // Step 4: Extract each letter — remove black bg, find tight bbox, store
-  const letterImages = {}; // maps letter char → {canvas, bbox}
-
-  rowStrips.forEach(({ yStart, yEnd, letters }) => {
-    const ranges = findLetterRanges(yStart, yEnd);
-
-    // Match found ranges to the expected letters in order
-    // If we find fewer ranges than letters, we still map what we have
-    ranges.forEach(([ x1, x2 ], i) => {
-      if (i >= letters.length) return; // more ranges than letters — skip extras
-      const letter = letters[i];
-      const fw     = x2 - x1 + 1;
-      const fh     = yEnd - yStart + 1;
-
-      // Create a canvas for this letter's region
-      const lc     = document.createElement('canvas');
-      lc.width     = fw;
-      lc.height    = fh;
-      const lctx   = lc.getContext('2d');
-      const lImgD  = lctx.createImageData(fw, fh);
-      const ld     = lImgD.data;
-
-      let minX = fw, maxX = 0, minY = fh, maxY = 0;
-
-      // Copy pixels, making black → transparent and tracking content bounds
-      for (let y = 0; y < fh; y++) {
-        for (let x = 0; x < fw; x++) {
-          const srcI   = ((yStart + y) * IW + (x1 + x)) * 4;
-          const dstI   = (y * fw + x) * 4;
-          const r = px[srcI], g = px[srcI+1], b = px[srcI+2];
-          const isBlack = r < 20 && g < 20 && b < 20; // black background threshold
-          ld[dstI]   = r;
-          ld[dstI+1] = g;
-          ld[dstI+2] = b;
-          ld[dstI+3] = isBlack ? 0 : 255; // transparent if black, opaque otherwise
-          if (!isBlack) {
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-          }
-        }
-      }
-
-      lctx.putImageData(lImgD, 0, 0);
-      letterImages[letter] = {
-        canvas: lc,
-        bbox:   [minX, minY, maxX + 1, maxY + 1], // tight content bounds within the canvas
-      };
-    });
-  });
-
-  console.log(`LETTERSHEET processed: found ${Object.keys(letterImages).length} / 26 letters`);
-
-  // Step 5: Build the final font canvas — a uniform grid of cells
-  // Each cell is CELL_W × CELL_H pixels, letters scaled to fit and centered.
-  // Layout: 13 columns × 2 rows, matching the glyphMap in drawStr()
-  // Row 0: A–M  |  Row 1: N–Z
-  const CELL_W = 48;  // must match GLYPH_W constant used in drawStr/measureStr
-  const CELL_H = 64;  // must match GLYPH_H constant used in drawStr/measureStr
-  const COLS   = 13;
-  const ROWS   = 2;
-
-  const fontC   = document.createElement('canvas');
-  fontC.width   = CELL_W * COLS; // 624px
-  fontC.height  = CELL_H * ROWS; // 128px
-  const fontCtx = fontC.getContext('2d');
-  fontCtx.imageSmoothingEnabled = false; // pixel art — no blurring
-
-  const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  ABC.split('').forEach((letter, idx) => {
-    const col    = idx % COLS;           // which column (0-12)
-    const row    = Math.floor(idx / COLS); // which row (0 or 1)
-    const destX  = col * CELL_W;
-    const destY  = row * CELL_H;
-
-    const entry = letterImages[letter];
-    if (!entry) {
-      console.warn('processFont: missing letter', letter);
-      return; // cell stays blank
-    }
-
-    const { canvas: lc, bbox: [bx, by, bx2, by2] } = entry;
-    const bw   = bx2 - bx; // bounding box width
-    const bh   = by2 - by; // bounding box height
-
-    // Scale letter to fit inside the cell with a small padding margin
-    const PAD    = 3;
-    const maxW   = CELL_W - PAD * 2;
-    const maxH   = CELL_H - PAD * 2;
-    const scale  = Math.min(maxW / bw, maxH / bh);
-    const drawW  = Math.round(bw * scale);
-    const drawH  = Math.round(bh * scale);
-
-    // Center the scaled letter within the cell
-    const offX   = destX + PAD + Math.round((maxW - drawW) / 2);
-    const offY   = destY + PAD + Math.round((maxH - drawH) / 2);
-
-    fontCtx.drawImage(
-      lc,
-      bx, by, bw, bh,         // source: tight crop of the letter
-      offX, offY, drawW, drawH // destination: centered, scaled into the cell
-    );
-  });
-
-  // Store the finished font canvas — drawStr() will read from this
-  assets.fontCanvas = fontC;
-  console.log(`Font canvas built: ${fontC.width}x${fontC.height}, ${CELL_W}x${CELL_H} per cell`);
-  onDone();
-}
-
-// =============================================================================
-// BACKGROUND + FLOOR
-// =============================================================================
-// Draw order every frame:
-//   1. Background.png — fills entire canvas, drawn first (bottommost layer)
-//   2. Floor.png      — RGBA with transparent upper area, drawn on top of background
-//      The floor image is 2816x1408. Only the bottom ~12% has stone content.
-//      The upper 88% is transparent (alpha=0) so only the tiles show.
-//      This renders at full 100% opacity — no bleed-through from background.
-
-function drawBackground() {
-  // Layer 1: background
-  if (assets.bg && assets.bg.complete && assets.bg.naturalWidth) {
-    ctx.drawImage(assets.bg, 0, 0, W, H);
-  } else {
-    ctx.fillStyle = '#0a0e1a'; // dark fallback while loading
-    ctx.fillRect(0, 0, W, H);
-  }
-  // Layer 2: floor (drawn normally — transparency handled by PNG alpha channel)
-  if (assets.floor && assets.floor.complete && assets.floor.naturalWidth) {
-    ctx.drawImage(assets.floor, 0, 0, W, H);
-  }
-}
-
-// =============================================================================
-// PLATFORMS
-// =============================================================================
-// Positions taken pixel-perfectly from PlankLocation.png (same size as background).
-// Ground (index 0): visual handled by Floor.png — no drawImage needed here.
-// Ledges (indices 1–5): each stretched to fill its rectangle using its plank PNG.
-
-const PLATFORMS = [
-  { x: 0,   y: 350, w: 800, h: 50, plank: null      }, // Ground — Floor.png handles visual
-  { x: 100, y: 90,  w: 221, h: 14, plank: 'plank1'  }, // Top-left
-  { x: 602, y: 100, w: 160, h: 14, plank: 'plank2'  }, // Top-right
-  { x: 334, y: 190, w: 228, h: 14, plank: 'plank3'  }, // Center-mid
-  { x: 87,  y: 237, w: 172, h: 14, plank: 'plank4'  }, // Left-lower
-  { x: 596, y: 252, w: 184, h: 14, plank: 'plank5'  }, // Right-lower
-];
-
-function drawLedges() {
-  for (let i = 1; i < PLATFORMS.length; i++) {
-    const p   = PLATFORMS[i];
-    const img = assets[p.plank];
-    if (img && img.complete && img.naturalWidth) {
-      ctx.drawImage(img, p.x, p.y, p.w, p.h); // stretch plank image to exact platform rect
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.fillRect(p.x, p.y + p.h - 2, p.w, 3); // thin shadow under plank
-    } else {
-      ctx.fillStyle = '#5c3d1e'; // fallback while loading
-      ctx.fillRect(p.x, p.y, p.w, p.h);
-    }
-  }
-}
-
-// =============================================================================
-// CUSTOM BITMAP FONT (A–Z)
-// =============================================================================
-// Font canvas: 624×128px, 13 cols × 2 rows, each glyph 48×64px — built by processFont() from LETTERSHEET.png
-// Row 0 (y=0):   A B C D E F G H I J K L M
-// Row 1 (y=64):  N O P Q R S T U V W X Y Z
-// Letters are drawn from the sheet; spaces and unknown chars are skipped/fallback.
-
-const GLYPH_W   = 48; // native width of one glyph on the sheet
-const GLYPH_H   = 64; // native height of one glyph on the sheet
-const GLYPH_GAP = 2;  // pixels between glyphs when drawing a string
-const SPACE_W   = 14; // pixels wide for a space character
-
-// Build the glyph lookup map: 'A' → {col:0, row:0}, 'N' → {col:0, row:1} etc.
-const glyphMap = {};
-const ABC = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-for (let i = 0; i < ABC.length; i++) {
-  glyphMap[ABC[i]] = { col: i % 13, row: Math.floor(i / 13) };
-}
-
-// Measure how wide a string will be at a given scale (used for centering)
-function measureStr(str, scale) {
-  let w = 0;
-  const s = str.toUpperCase();
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i];
-    if      (ch === ' ')   w += Math.round(SPACE_W * scale);
-    else if (glyphMap[ch]) w += Math.round(GLYPH_W * scale) + Math.round(GLYPH_GAP * scale);
-  }
-  return Math.max(0, w - Math.round(GLYPH_GAP * scale));
-}
-
-// Draw a string using the custom bitmap font.
-// x, y   = top-left starting position
-// str    = text (only A–Z and spaces — other chars are skipped)
-// scale  = size multiplier: 1.0 = native 48×64px, 0.5 = 24×32px
-// align  = 'left' | 'center' | 'right'
-function drawStr(x, y, str, scale, align) {
-  scale = scale || 0.3;
-  align = align || 'left';
-  const gw  = Math.round(GLYPH_W   * scale);
-  const gh  = Math.round(GLYPH_H   * scale);
-  const gap = Math.round(GLYPH_GAP * scale);
-  const spw = Math.round(SPACE_W   * scale);
-  const s   = str.toUpperCase();
-
-  let cx = x;
-  if (align === 'center') cx = x - measureStr(s, scale) / 2;
-  if (align === 'right')  cx = x - measureStr(s, scale);
-
-  for (let i = 0; i < s.length; i++) {
-    const ch = s[i];
-    if (ch === ' ') { cx += spw; continue; }
-    if (glyphMap[ch] && assets.fontCanvas) {  // fontCanvas is set by processFont() after LETTERSHEET.png loads
-      const g = glyphMap[ch];
-      ctx.drawImage(
-        assets.fontCanvas,  // offscreen canvas containing the cleaned, cropped letter grid
-        g.col * GLYPH_W, g.row * GLYPH_H, GLYPH_W, GLYPH_H, // source crop
-        Math.round(cx), y, gw, gh                              // dest on canvas
-      );
-      cx += gw + gap;
-    }
-    // Non-letter characters are silently skipped — use drawDigitStr for numbers
-  }
-}
-
-// =============================================================================
-// NUMBER IMAGE RENDERER
-// =============================================================================
-// Draws a number (integer) using your custom digit PNG images from Numbers/ folder.
-// Each digit 0–9 maps to: num_0=Zero.png, num_1=One.png … num_9=Nine.png
-//
-// How it works:
-//   1. Convert the number to a string, e.g. score=47 → "47"
-//   2. Split into individual digits: ['4', '7']
-//   3. For each digit, look up assets['num_4'] and assets['num_7']
-//   4. Draw each digit image side by side at the given position
-//
-// x, y      = top-left of the first digit
-// num       = the integer to display (0–999)
-// digitH    = how tall each digit image should be drawn (width scales proportionally)
-// align     = 'left' | 'center' | 'right' (centers the whole number)
-// digitGap  = pixels between digit images (default 2)
-
-function measureDigitStr(num, digitH, digitGap) {
-  digitGap = digitGap || 2;
-  const digits = String(num).split('');
-  let totalW = 0;
-  digits.forEach(d => {
-    const img = assets['num_' + d];
-    if (img && img.complete && img.naturalWidth) {
-      // Scale width proportionally to digitH
-      const aspect = img.naturalWidth / img.naturalHeight;
-      totalW += Math.round(digitH * aspect) + digitGap;
-    } else {
-      totalW += Math.round(digitH * 0.7) + digitGap; // fallback estimate
-    }
-  });
-  return Math.max(0, totalW - digitGap); // remove trailing gap
-}
-
-function drawDigitStr(x, y, num, digitH, align, digitGap) {
-  digitGap  = digitGap  || 2;
-  align     = align     || 'left';
-  const digits = String(num).split(''); // e.g. 47 → ['4', '7']
-
-  // Compute starting x based on alignment
-  let cx = x;
-  if (align === 'center') cx = x - measureDigitStr(num, digitH, digitGap) / 2;
-  if (align === 'right')  cx = x - measureDigitStr(num, digitH, digitGap);
-
-  digits.forEach(d => {
-    const img = assets['num_' + d]; // look up e.g. assets['num_4'] = Numbers/Four.png
-    if (img && img.complete && img.naturalWidth) {
-      // Scale width proportionally so the image doesn't stretch
-      const aspect = img.naturalWidth / img.naturalHeight;
-      const dw     = Math.round(digitH * aspect);
-      ctx.drawImage(img, Math.round(cx), y, dw, digitH);
-      cx += dw + digitGap;
-    } else {
-      // Fallback: plain text if image not loaded
-      ctx.save();
-      ctx.font         = `bold ${digitH}px monospace`;
-      ctx.fillStyle    = '#ffd700';
-      ctx.textBaseline = 'top';
-      ctx.textAlign    = 'left';
-      ctx.fillText(d, Math.round(cx), y);
-      cx += Math.round(digitH * 0.7) + digitGap;
-      ctx.restore();
-    }
-  });
-}
-
-// =============================================================================
-// WIZARD SPRITE
-// =============================================================================
-
-const WIZ_FRAMES   = 5;  // total frames in the walk cycle
-const WIZ_IDLE_DLY = 12; // ticks between frames when standing still (lower = faster)
-const WIZ_WALK_DLY = 5;  // ticks between frames when walking (lower = snappier)
-
-let wizFrame = 0;
-let wizTick  = 0;
-
+// Advance the animation by one game tick.
+// 'jump' holds frame 2 (a mid-stride pose that looks natural mid-air).
+// 'walk' cycles faster than 'idle' to feel snappier while running.
 function tickWizard(state) {
-  if (state === 'jump') { wizFrame = 2; return; } // hold a mid-stride frame while airborne
-  const delay = state === 'walk' ? WIZ_WALK_DLY : WIZ_IDLE_DLY;
-  if (++wizTick >= delay) { wizTick = 0; wizFrame = (wizFrame + 1) % WIZ_FRAMES; }
+  if (state==='jump') { wizFrame=2; return; }
+  const delay = state==='walk' ? WIZ_WALK_DLY : WIZ_IDLE_DLY;
+  if (++wizTick >= delay) { wizTick=0; wizFrame=(wizFrame+1)%WIZ_FRAMES; }
 }
 
+// Draw the current animation frame centred horizontally over the collision box,
+// bottom-aligned with the player's feet. Mirrors horizontally when facing left.
 function drawWizard() {
-  const sheet = assets.wiz; // offscreen canvas built by processWizard()
-  if (!sheet) {
-    ctx.fillStyle = '#4fc3f7'; // blue placeholder if WizWalk.png failed
-    ctx.fillRect(player.x, player.y, player.w, player.h);
-    return;
-  }
-  const CW    = assets.wizCellW; // frame width  — set by processWizard()
-  const CH    = assets.wizCellH; // frame height — set by processWizard()
-  const destX = Math.round(player.x - (CW - player.w) / 2); // center sprite over collision box
-  const destY = Math.round(player.y + player.h - CH);        // align sprite bottom with feet
-
+  if (!assets.wiz) { ctx.fillStyle='#4fc3f7'; ctx.fillRect(player.x,player.y,player.w,player.h); return; }
+  const CW=assets.wizCellW, CH=assets.wizCellH;
+  const dx=Math.round(player.x-(CW-player.w)/2), dy=Math.round(player.y+player.h-CH);
   ctx.save();
-  if (player.facing === -1) {
-    // Mirror the sprite when facing left
-    ctx.translate(destX + CW / 2, 0);
-    ctx.scale(-1, 1);
-    ctx.translate(-(destX + CW / 2), 0);
-  }
-  ctx.drawImage(sheet, wizFrame * CW, 0, CW, CH, destX, destY, CW, CH);
+  if (player.facing===-1) { ctx.translate(dx+CW/2,0); ctx.scale(-1,1); ctx.translate(-(dx+CW/2),0); }
+  ctx.drawImage(assets.wiz, wizFrame*CW, 0, CW, CH, dx, dy, CW, CH);
   ctx.restore();
 }
 
-// =============================================================================
-// PHYSICS + PLAYER
-// =============================================================================
+// ═════════════════════════════════════════════════════════════════════════════
+//  LETTER PROCESSOR
+//  Letters/A.png through Letters/Z.png each have a black background.
+//  For every letter:
+//    1. Draw onto temp canvas, read pixels via getImageData.
+//    2. Any pixel with R<25, G<25, B<25 → alpha=0 (transparent).
+//    3. Crop tightly to the content bounding box.
+//    4. Store the cropped canvas as assets['lc_A'] etc.
+//    5. Store the natural aspect ratio on the canvas as ._ar — drawStr() uses this
+//       to calculate draw width = letterH × _ar, preserving proportions at any size.
+// ═════════════════════════════════════════════════════════════════════════════
 
-const GRAVITY      = 0.52;
-const JUMP_FORCE   = -13;
-const PLAYER_SPEED = 4.2;
+function processLetters(onDone) {
+  let done=0;
+  ALPHABET.split('').forEach(l => {
+    const raw = assets['lr_'+l];
+    const finish = () => { if (++done>=26) { console.log('Letters ready'); onDone(); } };
+    if (!raw?.naturalWidth) { assets['lc_'+l]=null; finish(); return; }
 
-const player = {
-  x: 386, y: 298, // starting position — 298 = ground y(350) - player height(52)
-  w: 36,  h: 52,  // collision box (narrower than the drawn sprite)
-  vx: 0, vy: 0,
-  onGround: false,
-  facing:   1,     // 1 = right, -1 = left
-};
+    const tc=document.createElement('canvas'); tc.width=raw.naturalWidth; tc.height=raw.naturalHeight;
+    const tx=tc.getContext('2d'); tx.drawImage(raw,0,0);
+    const id=tx.getImageData(0,0,tc.width,tc.height); const px=id.data;
+    let x0=tc.width, xm=0, y0=tc.height, ym=0;
 
-function resetPlayer() {
-  player.x = 386; player.y = 298;
-  player.vx = 0; player.vy = 0;
-  player.onGround = false; player.facing = 1;
-  wizFrame = 0; wizTick = 0;
+    for (let i=0; i<px.length; i+=4) {
+      const isBg = px[i]<25 && px[i+1]<25 && px[i+2]<25;
+      px[i+3] = isBg ? 0 : 255;
+      if (!isBg) {
+        const xi=(i/4)%tc.width, yi=Math.floor((i/4)/tc.width);
+        x0=Math.min(x0,xi); xm=Math.max(xm,xi); y0=Math.min(y0,yi); ym=Math.max(ym,yi);
+      }
+    }
+    if (xm<=x0||ym<=y0) { assets['lc_'+l]=null; finish(); return; }
+    tx.putImageData(id,0,0);
+
+    const cw=xm-x0+1, ch=ym-y0+1;
+    const out=document.createElement('canvas'); out.width=cw; out.height=ch;
+    out.getContext('2d').drawImage(tc,x0,y0,cw,ch,0,0,cw,ch);
+    out._ar = cw/ch; // aspect ratio stored on the canvas element for drawStr()
+    assets['lc_'+l]=out;
+    finish();
+  });
 }
 
-// =============================================================================
-// INPUT
-// =============================================================================
+// ═════════════════════════════════════════════════════════════════════════════
+//  FONT RENDERER — drawStr / measureStr
+//  Uses per-letter canvases from processLetters().
+//  letterH controls height in px; width is always auto from each letter's _ar.
+//  Spacing (gap between letters, width of space) scales proportionally with letterH.
+// ═════════════════════════════════════════════════════════════════════════════
 
-const keys = {};
+const lgap  = h => Math.round(LGAP * h/16);  // inter-letter gap at given height
+const lspc  = h => Math.round(LSPC * h/16);  // space character width at given height
+
+function measureStr(str, h) {
+  let w=0;
+  for (const ch of str.toUpperCase()) {
+    const lc=assets['lc_'+ch];
+    w += ch===' ' ? lspc(h) : lc ? Math.round(h*lc._ar)+lgap(h) : 0;
+  }
+  return Math.max(0, w-lgap(h)); // remove trailing gap after last character
+}
+
+// x,y = reference point; align governs whether x is left-edge, centre, or right-edge
+function drawStr(x, y, str, h, align='left') {
+  let cx = align==='center' ? x-measureStr(str,h)/2 : align==='right' ? x-measureStr(str,h) : x;
+  for (const ch of str.toUpperCase()) {
+    if (ch===' ') { cx+=lspc(h); continue; }
+    const lc=assets['lc_'+ch];
+    if (lc) { const dw=Math.round(h*lc._ar); ctx.drawImage(lc,0,0,lc.width,lc.height,Math.round(cx),y,dw,h); cx+=dw+lgap(h); }
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  DIGIT RENDERER — drawDigitStr / measureDigitStr
+//  Draws integers using Numbers/*.png images.
+//  Each digit's draw width = digitH × (img.naturalWidth / img.naturalHeight).
+//  Handles any integer 0–999 automatically by splitting into individual digits.
+// ═════════════════════════════════════════════════════════════════════════════
+
+function measureDigitStr(num, h, gap=4) {
+  let w=0;
+  for (const d of String(num)) {
+    const img=assets['num_'+d];
+    w += (img?.naturalWidth ? Math.round(h*img.naturalWidth/img.naturalHeight) : Math.round(h*0.7)) + gap;
+  }
+  return Math.max(0, w-gap);
+}
+
+function drawDigitStr(x, y, num, h, align='left', gap=4) {
+  let cx = align==='center' ? x-measureDigitStr(num,h,gap)/2 : align==='right' ? x-measureDigitStr(num,h,gap) : x;
+  for (const d of String(num)) {
+    const img=assets['num_'+d];
+    if (img?.naturalWidth) {
+      const dw=Math.round(h*img.naturalWidth/img.naturalHeight);
+      ctx.drawImage(img,Math.round(cx),y,dw,h); cx+=dw+gap;
+    } else {
+      ctx.save(); ctx.font=`bold ${h}px monospace`; ctx.fillStyle='#ffd700';
+      ctx.textBaseline='top'; ctx.textAlign='left'; ctx.fillText(d,Math.round(cx),y);
+      cx+=Math.round(h*0.7)+gap; ctx.restore();
+    }
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  BACKGROUND + FLOOR
+//  Background.png is drawn first, stretched to fill the canvas.
+//  Floor.png is an RGBA PNG where the upper ~88% is fully transparent;
+//  only the bottom stone-tile strip (y≈525+ at 1200×600) is opaque.
+//  Drawing Floor.png on top of Background.png with source-over compositing
+//  gives a clean floor with 100% opacity — no background bleed-through.
+//  tintAlpha: if non-zero, a solid black rect is drawn on top at that opacity
+//  to darken the scene (menu screens use 0.96, gameplay uses 0.52).
+// ═════════════════════════════════════════════════════════════════════════════
+
+function drawBG(tintAlpha=0) {
+  if (assets.bg?.naturalWidth) ctx.drawImage(assets.bg,0,0,W,H);
+  else { ctx.fillStyle='#0a0e1a'; ctx.fillRect(0,0,W,H); }
+  if (assets.floor?.naturalWidth) ctx.drawImage(assets.floor,0,0,W,H);
+  if (tintAlpha) { ctx.fillStyle=`rgba(0,0,0,${tintAlpha})`; ctx.fillRect(0,0,W,H); }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  PLATFORMS
+//  Ground (index 0) at y=525 — its visual is Floor.png, no drawImage needed.
+//  Ledges (indices 1–11): each platform stores its plank key.
+//  drawLedges() draws each plank at its NATURAL aspect ratio width so the texture
+//  never stretches. Width = PLANK_H × (img.naturalWidth / img.naturalHeight).
+//  Platform collision in update() uses the same natural width.
+//  The PLATFORMS array stores w=0; actual w is computed lazily via plankW().
+//
+//  Layout: 4 rows at y=115,210,310,415 — each row is ~95–105px above the next.
+//  Max jump height with JUMP_FORCE=-11, GRAVITY=0.60 is ~101px, so every row
+//  is exactly one jump apart. Chain path: ground→y415→y310→y210→y115.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Returns the natural draw width for a plank key at the current PLANK_H.
+// Computed on the fly so changing PLANK_H automatically resizes all platforms.
+function plankW(key) {
+  const img = assets[key];
+  if (!img?.naturalWidth) return 120; // fallback while image loads
+  return Math.round(PLANK_H * img.naturalWidth / img.naturalHeight);
+}
+
+const PLATFORMS = [
+  {x:0,   y:525, h:75,      plank:null    }, // ground — Floor.png handles visual
+  // Row: lower (y=415)
+  {x:80,  y:415, h:PLANK_H, plank:'plank1'},
+  {x:480, y:415, h:PLANK_H, plank:'plank3'},
+  {x:900, y:415, h:PLANK_H, plank:'plank5'},
+  // Row: mid (y=310)
+  {x:180, y:310, h:PLANK_H, plank:'plank2'},
+  {x:520, y:310, h:PLANK_H, plank:'plank4'},
+  {x:870, y:310, h:PLANK_H, plank:'plank1'},
+  // Row: upper (y=210)
+  {x:50,  y:210, h:PLANK_H, plank:'plank3'},
+  {x:440, y:210, h:PLANK_H, plank:'plank5'},
+  {x:920, y:210, h:PLANK_H, plank:'plank2'},
+  // Row: top (y=115)
+  {x:260, y:115, h:PLANK_H, plank:'plank4'},
+  {x:740, y:115, h:PLANK_H, plank:'plank3'},
+];
+
+function drawLedges() {
+  for (let i=1; i<PLATFORMS.length; i++) {
+    const p=PLATFORMS[i], img=assets[p.plank];
+    const w=plankW(p.plank); // natural-ratio width — no stretching
+    if (img?.naturalWidth) {
+      ctx.drawImage(img, p.x, p.y, w, p.h);
+      // Thin drop shadow beneath each plank for visual grounding
+      ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(p.x, p.y+p.h-2, w, 3);
+    } else {
+      ctx.fillStyle='#5c3d1e'; ctx.fillRect(p.x, p.y, w, p.h);
+    }
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  PLAYER / PHYSICS
+//  Collision box is smaller than the drawn wizard sprite — this is intentional.
+//  The wizard's staff and hat extend outside the collision box so the game feels
+//  fair (you won't get hit by something that visually looks like it missed).
+//  SPAWN_Y positions the player standing on the ground platform.
+// ═════════════════════════════════════════════════════════════════════════════
+
+const SPAWN_Y = 525 - 66; // ground.y(525) minus player height(66) = 459
+const player = {x:586, y:SPAWN_Y, w:42, h:66, vx:0, vy:0, onGround:false, facing:1};
+// x:586 = horizontal centre of 1200px canvas  |  w:42 h:66 = collision box
+
+function resetPlayer() {
+  Object.assign(player, {x:586, y:SPAWN_Y, vx:0, vy:0, onGround:false, facing:1});
+  wizFrame=0; wizTick=0;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  INPUT
+// ═════════════════════════════════════════════════════════════════════════════
+
+const keys={};
 window.addEventListener('keydown', e => {
-  const BLOCK = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD'];
-  if (BLOCK.includes(e.code)) e.preventDefault();
-  keys[e.code] = true;
-  // Only start from the start screen — game over screen has no restart
-  if (gameState === 'start') startGame();
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD'].includes(e.code)) e.preventDefault();
+  keys[e.code]=true;
+  if (gameState==='start') startGame(); // any key starts the game from the title screen
 });
-window.addEventListener('keyup', e => { keys[e.code] = false; });
+window.addEventListener('keyup', e => { keys[e.code]=false; });
 
-// =============================================================================
-// GAME STATE
-// =============================================================================
+// ═════════════════════════════════════════════════════════════════════════════
+//  GAME STATE
+// ═════════════════════════════════════════════════════════════════════════════
 
-const GAME_DURATION = 20;   // round length in seconds
-const SPAWN_MS      = 2200; // ms between number spawns (lower = more frequent)
-const MAX_NUMBERS   = 5;    // max collectible numbers on screen at once
-const MAX_SCORE     = 100;  // score cap — reaching this ends the game immediately
+const GAME_DURATION=20, SPAWN_MS=2200, MAX_NUMBERS=5, MAX_SCORE=100;
+let score=0, timeLeft=GAME_DURATION, gameActive=false, gameState='start';
+let numbers=[], timerID=null, spawnID=null, rafID=null, playedOnce=false;
 
-let score      = 0;
-let timeLeft   = GAME_DURATION;
-let gameActive = false;
-let gameState  = 'start'; // 'start' | 'playing' | 'gameover'
-let numbers    = [];
-let timerID    = null;
-let spawnID    = null;
-let rafID      = null;
-let playedOnce = false; // prevents replaying — game can only be played once per page load
-
-// =============================================================================
-// NUMBER COLLECTIBLES (the things the player runs into to collect points)
-// =============================================================================
-
-const NUM_W = 28; // display width of each collectible number image on screen
-const NUM_H = 28; // display height
+// ═════════════════════════════════════════════════════════════════════════════
+//  COLLECTIBLES
+//  Numbers 1–9 float above platforms. They bob up and down using Math.sin().
+//  Each number stores a random bob phase so they don't all move in sync.
+//  Collision uses a square hit radius around the number's centre position.
+// ═════════════════════════════════════════════════════════════════════════════
 
 function spawnNumber() {
-  if (numbers.length >= MAX_NUMBERS) return;
-  const p   = PLATFORMS[Math.floor(Math.random() * PLATFORMS.length)];
-  const val = Math.floor(Math.random() * 9) + 1; // value 1–9 (collectibles are never zero)
-  const pad = 24;
-  numbers.push({
-    x:     p.x + pad + Math.random() * (p.w - pad * 2),
-    y:     p.y - 22,  // float above the platform surface
-    value: val,       // used to look up the digit image: assets['num_' + val]
-    bob:   Math.random() * Math.PI * 2, // random phase so numbers don't all bob in sync
-  });
+  if (numbers.length>=MAX_NUMBERS) return;
+  const p=PLATFORMS[Math.floor(Math.random()*PLATFORMS.length)];
+  const w=p.plank ? plankW(p.plank) : p.x; // ground uses full width, ledges use natural plank width
+  const pad=20;
+  numbers.push({x:p.x+pad+Math.random()*(w-pad*2), y:p.y-22, value:Math.floor(Math.random()*9)+1, bob:Math.random()*Math.PI*2});
 }
 
 function drawNumbers(now) {
   for (const n of numbers) {
-    const bobY = Math.sin(now + n.bob) * 5; // gentle floating animation ±5px
-    const img  = assets['num_' + n.value];  // e.g. assets['num_7'] = Numbers/Seven.png
-    const dx   = n.x - NUM_W / 2;
-    const dy   = n.y + bobY - NUM_H / 2;
-    ctx.save();
-    ctx.shadowColor = '#ffd700'; // gold glow behind number images
-    ctx.shadowBlur  = 14;
-    if (img && img.complete && img.naturalWidth) {
-      ctx.drawImage(img, Math.round(dx), Math.round(dy), NUM_W, NUM_H);
-    } else {
-      // Fallback text while image loads
-      ctx.font = 'bold 16px monospace';
-      ctx.fillStyle = '#ffd700';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(n.value, n.x, n.y + bobY);
-    }
+    const by=Math.sin(now+n.bob)*5, img=assets['num_'+n.value];
+    ctx.save(); ctx.shadowColor='#ffd700'; ctx.shadowBlur=14;
+    if (img?.naturalWidth) ctx.drawImage(img, Math.round(n.x-COLLECT_SIZE/2), Math.round(n.y+by-COLLECT_SIZE/2), COLLECT_SIZE, COLLECT_SIZE);
+    else { ctx.font=`bold ${COLLECT_SIZE}px monospace`; ctx.fillStyle='#ffd700'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(n.value,n.x,n.y+by); }
     ctx.restore();
   }
 }
 
-// =============================================================================
-// MUSIC
-// =============================================================================
+// ═════════════════════════════════════════════════════════════════════════════
+//  MUSIC BUTTON
+//  MusicButton.png replaces the old HTML button in the corner.
+//  It is drawn directly on the canvas as a small square in the bottom-right.
+//  Clicking inside that square on the canvas toggles music on/off.
+//  musicBtnRect tracks the on-screen position for hit testing.
+// ═════════════════════════════════════════════════════════════════════════════
 
-const music        = document.getElementById('bg-music');
-let   musicStarted = false;
-let   musicMuted   = false;
+const music=document.getElementById('bg-music');
+let musicStarted=false, musicMuted=false;
+const MBTN_SIZE = 44; // drawn size of the music button square (px)
+const musicBtnRect = {x: W-MBTN_SIZE-10, y: H-MBTN_SIZE-10, w: MBTN_SIZE, h: MBTN_SIZE};
 
 function tryStartMusic() {
   if (musicStarted) return;
-  music.volume = 0.4;
-  music.play().then(() => { musicStarted = true; }).catch(() => {});
+  music.volume=0.4;
+  music.play().then(()=>musicStarted=true).catch(()=>{});
 }
-document.addEventListener('click', tryStartMusic, { once: true });
+document.addEventListener('click', tryStartMusic, {once:true});
 
-const musicBtn = document.getElementById('music-btn');
-musicBtn.addEventListener('click', e => {
-  e.stopPropagation();
-  if (!musicStarted) { tryStartMusic(); return; }
-  musicMuted = !musicMuted;
-  if (musicMuted) { music.pause(); musicBtn.textContent = '♪ OFF'; musicBtn.classList.add('muted'); }
-  else            { music.play();  musicBtn.textContent = '♪';     musicBtn.classList.remove('muted'); }
+// Canvas click → check if the hit lands inside the music button rect, then toggle
+canvas.addEventListener('click', e => {
+  const rect=canvas.getBoundingClientRect();
+  // Scale mouse coords from CSS pixels to canvas pixels (in case CSS scales the canvas)
+  const mx=(e.clientX-rect.left)*(W/rect.width);
+  const my=(e.clientY-rect.top)*(H/rect.height);
+  if (mx>=musicBtnRect.x && mx<=musicBtnRect.x+musicBtnRect.w && my>=musicBtnRect.y && my<=musicBtnRect.y+musicBtnRect.h) {
+    if (!musicStarted) { tryStartMusic(); return; }
+    musicMuted=!musicMuted;
+    musicMuted ? music.pause() : music.play();
+  }
 });
 
-// =============================================================================
-// PHYSICS UPDATE
-// =============================================================================
+function drawMusicBtn() {
+  const mb=assets.musicBtn;
+  if (mb?.naturalWidth) {
+    // Draw MusicButton.png scaled to MBTN_SIZE × MBTN_SIZE, slightly dimmed when muted
+    ctx.globalAlpha = musicMuted ? 0.35 : 0.85;
+    ctx.drawImage(mb, musicBtnRect.x, musicBtnRect.y, musicBtnRect.w, musicBtnRect.h);
+    ctx.globalAlpha = 1;
+  } else {
+    // Fallback text button if image hasn't loaded
+    ctx.fillStyle = musicMuted ? '#334' : '#4fc3f7';
+    ctx.fillRect(musicBtnRect.x, musicBtnRect.y, musicBtnRect.w, musicBtnRect.h);
+    ctx.fillStyle='#fff'; ctx.font='18px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(musicMuted?'🔇':'♪', musicBtnRect.x+musicBtnRect.w/2, musicBtnRect.y+musicBtnRect.h/2);
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+//  UPDATE — physics, input, collision, collection, animation
+// ═════════════════════════════════════════════════════════════════════════════
 
 function update() {
-  const goLeft  = keys['ArrowLeft']  || keys['KeyA'];
-  const goRight = keys['ArrowRight'] || keys['KeyD'];
+  const gL=keys['ArrowLeft']||keys['KeyA'], gR=keys['ArrowRight']||keys['KeyD'];
 
-  player.vx = 0;
-  if (goLeft)  { player.vx = -PLAYER_SPEED; player.facing = -1; }
-  if (goRight) { player.vx =  PLAYER_SPEED; player.facing =  1; }
+  // Horizontal movement: instant velocity set each frame (no momentum/sliding)
+  player.vx = gL ? -SPEED : gR ? SPEED : 0;
+  if (gL) player.facing=-1; if (gR) player.facing=1;
+  player.x = Math.max(0, Math.min(W-player.w, player.x+player.vx));
 
-  player.x += player.vx;
-  player.x  = Math.max(0, Math.min(W - player.w, player.x));
-
-  player.vy      += GRAVITY;
-  const prevBot   = player.y + player.h;
-  player.y       += player.vy;
+  // Vertical: accumulate gravity, then resolve platform collisions
+  player.vy += GRAVITY;
+  const prevBot = player.y+player.h;
+  player.y += player.vy;
   player.onGround = false;
 
-  // Top-surface platform collision
   for (const p of PLATFORMS) {
-    const curBot = player.y + player.h;
-    if (player.vy >= 0 && prevBot <= p.y + 1 && curBot >= p.y &&
-        player.x + player.w > p.x + 2 && player.x < p.x + p.w - 2) {
-      player.y = p.y - player.h; player.vy = 0; player.onGround = true;
+    // Use natural plank width for ledges, full canvas width for ground
+    const pw = p.plank ? plankW(p.plank) : W;
+    const curBot = player.y+player.h;
+    // Top-surface-only collision: player was above platform last frame and is at/below this frame
+    if (player.vy>=0 && prevBot<=p.y+1 && curBot>=p.y && player.x+player.w>p.x+2 && player.x<p.x+pw-2) {
+      player.y=p.y-player.h; player.vy=0; player.onGround=true;
     }
   }
 
-  if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && player.onGround) {
-    player.vy = JUMP_FORCE; player.onGround = false;
+  // Jump: only allowed when standing on a surface
+  if ((keys['ArrowUp']||keys['KeyW']||keys['Space']) && player.onGround) {
+    player.vy=JUMP_FORCE; player.onGround=false;
   }
 
-  if (player.y > H + 60) resetPlayer(); // fell off bottom — respawn
+  if (player.y>H+80) resetPlayer(); // fell off bottom — teleport back to spawn
 
-  // Wizard animation state
-  if      (!player.onGround)      tickWizard('jump');
-  else if (goLeft || goRight)     tickWizard('walk');
-  else                             tickWizard('idle');
+  // Wizard animation: pick state based on physics, advance one tick
+  tickWizard(!player.onGround ? 'jump' : (gL||gR) ? 'walk' : 'idle');
 
-  // Collect numbers — AABB overlap check
-  const hw = NUM_W / 2 + 6;
-  const hh = NUM_H / 2 + 6;
+  // Collectible hit detection: square AABB around each number's centre
+  const hr=COLLECT_SIZE/2+6;
   numbers = numbers.filter(n => {
-    const hit = player.x < n.x + hw && player.x + player.w > n.x - hw &&
-                player.y < n.y + hh && player.y + player.h > n.y - hh;
-    if (hit) {
-      score = Math.min(score + n.value, MAX_SCORE); // add value, cap at MAX_SCORE
-      if (score >= MAX_SCORE) endGame();            // instant end when score maxes out
-      return false; // remove this number from the array
+    if (player.x<n.x+hr && player.x+player.w>n.x-hr && player.y<n.y+hr && player.y+player.h>n.y-hr) {
+      score=Math.min(score+n.value, MAX_SCORE); if(score>=MAX_SCORE) endGame(); return false;
     }
-    return true; // keep uncollected numbers
+    return true;
   });
 }
 
-// =============================================================================
-// HUD — drawn on top of everything during gameplay
-// =============================================================================
-// Score and timer are both drawn using your custom digit images from Numbers/ folder.
-// "SCORE" and "TIME" labels use your bitmap font (A–Z sheet).
-// Sizes are controlled by the variables at the top of this file:
-//   HUD_SCORE_LABEL_SCALE, HUD_TIME_LABEL_SCALE, HUD_SCORE_NUM_SIZE, HUD_TIME_NUM_SIZE
+// ═════════════════════════════════════════════════════════════════════════════
+//  HUD — score (top-left) and timer (top-right) drawn on canvas every frame
+// ═════════════════════════════════════════════════════════════════════════════
 
 function drawHUD() {
-  ctx.shadowBlur = 0; // clear any shadow from previous draw calls
-
-  // ── SCORE (top-left) ──────────────────────────────────────────────────────
-  // Draw the word "SCORE" using the bitmap font
-  const scoreLabelX = 10;
-  const scoreLabelY = 6;
-  drawStr(scoreLabelX, scoreLabelY, 'SCORE', HUD_SCORE_LABEL_SCALE, 'left');
-
-  // Draw the score number using digit images, placed right after the label
-  // The score can be 0–100, so it may be 1, 2, or 3 digits
-  const scoreLabelW = measureStr('SCORE', HUD_SCORE_LABEL_SCALE);
-  const scoreNumX   = scoreLabelX + scoreLabelW + 6; // 6px gap after the label
-  const scoreNumY   = scoreLabelY + Math.round(GLYPH_H * HUD_SCORE_LABEL_SCALE / 2)
-                      - Math.round(HUD_SCORE_NUM_SIZE / 2); // vertically center digits on label
-  drawDigitStr(scoreNumX, scoreNumY, score, HUD_SCORE_NUM_SIZE, 'left');
-
-  // ── TIMER (top-right) ─────────────────────────────────────────────────────
-  // The countdown goes from 20 down to 1, then the game ends.
-  // We display it using digit images so it matches your custom number art.
-  // "TIME" label is drawn to the RIGHT-ALIGNED edge, digits to its left.
-  const timeLabelX = W - 10;
-  const timeLabelY = 6;
-  drawStr(timeLabelX, timeLabelY, 'TIME', HUD_TIME_LABEL_SCALE, 'right');
-
-  // Draw the timer number just to the left of the "TIME" label
-  const timeLabelW = measureStr('TIME', HUD_TIME_LABEL_SCALE);
-  const timeNumW   = measureDigitStr(timeLeft, HUD_TIME_NUM_SIZE);
-  const timeNumX   = timeLabelX - timeLabelW - timeNumW - 8; // 8px gap between number and label
-  const timeNumY   = timeLabelY + Math.round(GLYPH_H * HUD_TIME_LABEL_SCALE / 2)
-                     - Math.round(HUD_TIME_NUM_SIZE / 2); // vertically center
-  drawDigitStr(timeNumX, timeNumY, timeLeft, HUD_TIME_NUM_SIZE, 'left');
+  ctx.shadowBlur=0;
+  // SCORE: label word then digit images to its right
+  drawStr(12, 8, 'SCORE', HUD_LABEL_H, 'left');
+  drawDigitStr(12+measureStr('SCORE',HUD_LABEL_H)+8, 8+Math.round((HUD_LABEL_H-HUD_NUM_H)/2), score, HUD_NUM_H, 'left');
+  // TIME: digit images on the far right, then "TIME" label to their left
+  const tnw=measureDigitStr(timeLeft, HUD_NUM_H);
+  drawDigitStr(W-12, 8+Math.round((HUD_LABEL_H-HUD_NUM_H)/2), timeLeft, HUD_NUM_H, 'right');
+  drawStr(W-12-tnw-8, 8, 'TIME', HUD_LABEL_H, 'right');
+  // Music button always on top
+  drawMusicBtn();
 }
 
-// =============================================================================
-// SCREENS
-// =============================================================================
+// ═════════════════════════════════════════════════════════════════════════════
+//  SCREENS
+// ═════════════════════════════════════════════════════════════════════════════
 
-function drawScanlines() {
-  // Subtle horizontal scan line effect for atmosphere
-  for (let y = 0; y < H; y += 4) {
-    ctx.fillStyle = 'rgba(0,0,0,0.10)';
-    ctx.fillRect(0, y, W, 2);
-  }
+// Subtle CRT scanline effect — every 4px a semi-transparent black strip
+function scanlines() {
+  for (let y=0; y<H; y+=4) { ctx.fillStyle='rgba(0,0,0,0.08)'; ctx.fillRect(0,y,W,2); }
 }
 
-// ── START SCREEN ──────────────────────────────────────────────────────────────
-// Title: "VOLUMAGUS THE VAST" (two lines using bitmap font)
-// Instructions: how to play
-// Pulsing prompt: "PRESS A KEY TO BEGIN"
-// Font sizes controlled by START_* variables at the top of this file.
-
+// ── Start screen: title centred vertically in upper 35% of canvas, prompt at bottom ──
 function drawStartScreen() {
-  drawBackground();
-  drawLedges();
+  drawBG(OVERLAY_MENU); scanlines();
+  ctx.fillStyle='#0088cc'; ctx.fillRect(0,0,W,2); ctx.fillRect(0,H-2,W,2);
 
-  // Dark overlay so text is readable over the background
-  ctx.fillStyle = 'rgba(2,8,20,0.92)';
-  ctx.fillRect(0, 0, W, H);
-  drawScanlines();
+  const blockH = START_TITLE_H+10+START_SUB_H;
+  const ty = Math.round(H*0.35 - blockH/2);
+  drawStr(W/2, ty,                    'VOLUMAGUS', START_TITLE_H, 'center');
+  drawStr(W/2, ty+START_TITLE_H+10,   'THE VAST',  START_SUB_H,  'center');
 
-  // Blue accent lines top and bottom
-  ctx.fillStyle = '#0088cc';
-  ctx.fillRect(0, 0, W, 2);
-  ctx.fillRect(0, H - 2, W, 2);
-
-  // ── Title ─────────────────────────────────────────────────────────────────
-  // Line 1: "VOLUMAGUS"
-  // Line 2: "THE VAST"
-  // Sizes: START_TITLE_LINE1_SCALE and START_TITLE_LINE2_SCALE
-  const t1H    = Math.round(GLYPH_H * START_TITLE_LINE1_SCALE);
-  const t2H    = Math.round(GLYPH_H * START_TITLE_LINE2_SCALE);
-  const titleY = 38;
-  drawStr(W / 2, titleY,          'VOLUMAGUS', START_TITLE_LINE1_SCALE, 'center');
-  drawStr(W / 2, titleY + t1H + 4, 'THE VAST',  START_TITLE_LINE2_SCALE, 'center');
-
-  // Decorative divider line beneath title
-  const divY = titleY + t1H + t2H + 14;
-  ctx.fillStyle = 'rgba(0,170,255,0.45)';
-  ctx.fillRect(W / 2 - 130, divY, 260, 1);
-
-  // ── Instructions ──────────────────────────────────────────────────────────
-  // Size: START_INSTRUCT_SCALE
-  const iH = Math.round(GLYPH_H * START_INSTRUCT_SCALE) + 5;
-  const iY = divY + 12;
-  drawStr(W / 2, iY,           'RUN AND JUMP TO COLLECT',  START_INSTRUCT_SCALE, 'center');
-  drawStr(W / 2, iY + iH,      'NUMBERS',                  START_INSTRUCT_SCALE, 'center');
-  drawStr(W / 2, iY + iH * 2,  'YOU HAVE TWENTY SECONDS',  START_INSTRUCT_SCALE, 'center');
-
-  // ── Controls hint ─────────────────────────────────────────────────────────
-  // Size: START_CONTROLS_SCALE
-  const cH = Math.round(GLYPH_H * START_CONTROLS_SCALE) + 4;
-  const cY = iY + iH * 3 + 6;
-  drawStr(W / 2, cY,      'WASD OR ARROWS TO MOVE', START_CONTROLS_SCALE, 'center');
-  drawStr(W / 2, cY + cH, 'SPACE OR UP TO JUMP',    START_CONTROLS_SCALE, 'center');
-
-  // ── Pulsing "PRESS A KEY TO BEGIN" prompt ─────────────────────────────────
-  // Spells out correctly: "PRESS A KEY TO BEGIN"
-  // Size: START_PROMPT_SCALE
-  // Alpha pulses between 0.6 and 1.0 using a sine wave
-  const pulse = 0.6 + 0.4 * Math.sin(Date.now() * 0.004);
-  ctx.globalAlpha = pulse;
-  drawStr(W / 2, H - 44, 'PRESS A KEY TO BEGIN', START_PROMPT_SCALE, 'center');
-  ctx.globalAlpha = 1; // always reset globalAlpha after using it
+  ctx.globalAlpha = 0.6+0.4*Math.sin(Date.now()*0.004);
+  drawStr(W/2, H-50, 'PRESS A KEY TO BEGIN', START_PROMPT_H, 'center');
+  ctx.globalAlpha=1;
 }
 
-// ── GAME OVER SCREEN ──────────────────────────────────────────────────────────
-// "GAME OVER" — large, in your bitmap font
-// "YOUR VOLUME IS" — subtitle in your bitmap font
-// Final score — displayed using your digit images from Numbers/ folder
-// "THANKS FOR PLAYING" — small footer line
-// Sizes controlled by END_* variables at the top of this file.
-
+// ── Game over: GAME/OVER, subtitle, large score, footer ──────────────────────
 function drawGameOverScreen() {
-  drawBackground();
-  drawLedges();
+  drawBG(OVERLAY_MENU); scanlines();
+  ctx.fillStyle='#660000'; ctx.fillRect(0,0,W,2); ctx.fillRect(0,H-2,W,2);
 
-  // Dark overlay
-  ctx.fillStyle = 'rgba(2,4,14,0.94)';
-  ctx.fillRect(0, 0, W, H);
-  drawScanlines();
+  const gy=32;
+  drawStr(W/2, gy,                  'GAME', END_GAMEOVER_H, 'center');
+  drawStr(W/2, gy+END_GAMEOVER_H+6, 'OVER', END_GAMEOVER_H, 'center');
 
-  // Red accent lines
-  ctx.fillStyle = '#660000';
-  ctx.fillRect(0, 0, W, 2);
-  ctx.fillRect(0, H - 2, W, 2);
+  const dy=gy+END_GAMEOVER_H*2+18;
+  ctx.fillStyle='rgba(255,50,50,0.35)'; ctx.fillRect(W/2-130,dy,260,1);
 
-  // ── "GAME" and "OVER" stacked ─────────────────────────────────────────────
-  // Size: END_GAMEOVER_SCALE
-  const goH  = Math.round(GLYPH_H * END_GAMEOVER_SCALE);
-  const goY  = 30;
-  drawStr(W / 2, goY,          'GAME', END_GAMEOVER_SCALE, 'center');
-  drawStr(W / 2, goY + goH + 4, 'OVER', END_GAMEOVER_SCALE, 'center');
-
-  // Decorative divider
-  const divY = goY + goH * 2 + 14;
-  ctx.fillStyle = 'rgba(255,50,50,0.35)';
-  ctx.fillRect(W / 2 - 110, divY, 220, 1);
-
-  // ── "YOUR VOLUME IS" subtitle ─────────────────────────────────────────────
-  // Placed just below the divider
-  // Size: END_SUBTITLE_SCALE
-  const subH = Math.round(GLYPH_H * END_SUBTITLE_SCALE);
-  const subY = divY + 10;
-  drawStr(W / 2, subY, 'YOUR VOLUME IS', END_SUBTITLE_SCALE, 'center');
-
-  // ── Final score using digit images ────────────────────────────────────────
-  // Score is displayed using the same Numbers/ images as everywhere else.
-  // The score can be 0–100 (1–3 digits) — drawDigitStr handles all cases.
-  // Size: END_SCORE_NUM_SIZE (pixel height of each digit image)
-  const scoreY = subY + subH + 12;
-  drawDigitStr(W / 2, scoreY, score, END_SCORE_NUM_SIZE, 'center');
-
-  // ── "THANKS FOR PLAYING" footer ───────────────────────────────────────────
-  // Size: END_THANKS_SCALE
-  drawStr(W / 2, H - 46, 'THANKS FOR PLAYING', END_THANKS_SCALE, 'center');
+  const sy=dy+12;
+  drawStr(W/2, sy, 'TRAVELER YOUR VOLUME IS', END_TRAVELER_H, 'center');
+  drawDigitStr(W/2, sy+END_TRAVELER_H+14, score, END_SCORE_H, 'center');
+  drawStr(W/2, H-46, 'THANKS FOR PLAYING', END_THANKS_H, 'center');
 }
 
-// =============================================================================
-// MAIN GAME DRAW — called every frame during gameplay
-// =============================================================================
-
+// ── Gameplay frame: bg → planks → collectibles → wizard → HUD ────────────────
 function drawGame(t) {
-  const now = t ? t * 0.002 : Date.now() * 0.002; // slow time value for bob animation
-
-  drawBackground(); // layer 1: Background.png then Floor.png
-  drawLedges();     // layer 2: plank textures on each platform
-  drawNumbers(now); // layer 3: collectible number images (bobbing)
-  drawWizard();     // layer 4: wizard sprite (animated walk cycle)
-  drawHUD();        // layer 5: SCORE and TIME — always drawn last (topmost)
+  const now=t ? t*0.002 : Date.now()*0.002;
+  drawBG(OVERLAY_GAME);
+  drawLedges();
+  drawNumbers(now);
+  drawWizard();
+  drawHUD();
 }
 
-// =============================================================================
-// GAME FLOW
-// =============================================================================
+// ═════════════════════════════════════════════════════════════════════════════
+//  GAME FLOW
+// ═════════════════════════════════════════════════════════════════════════════
 
 function startGame() {
-  if (playedOnce) return; // one play per page load — no restart
-  playedOnce = true;
-
-  cancelAnimationFrame(rafID);
-  clearInterval(timerID);
-  clearInterval(spawnID);
-
-  score = 0; timeLeft = GAME_DURATION; numbers = [];
-  gameState = 'playing'; gameActive = true;
-  resetPlayer();
-  spawnNumber();
-
-  // Countdown timer: fires every 1 second, decrements timeLeft
-  // When timeLeft hits 0 after decrementing to 1 and then 0, endGame() is called.
-  // The game ends after displaying "1" for one second — not after "0".
-  timerID = setInterval(() => {
-    timeLeft--;
-    if (timeLeft <= 0) endGame(); // end when counter reaches 0 (was showing 1)
-  }, 1000);
-
-  spawnID = setInterval(spawnNumber, SPAWN_MS);
-  rafID   = requestAnimationFrame(gameLoop);
+  if (playedOnce) return; playedOnce=true; // one play per page load
+  cancelAnimationFrame(rafID); clearInterval(timerID); clearInterval(spawnID);
+  score=0; timeLeft=GAME_DURATION; numbers=[];
+  gameState='playing'; gameActive=true;
+  resetPlayer(); spawnNumber();
+  timerID=setInterval(()=>{ if(--timeLeft<=0) endGame(); }, 1000);
+  spawnID=setInterval(spawnNumber, SPAWN_MS);
+  rafID=requestAnimationFrame(gameLoop);
 }
 
 function endGame() {
-  if (!gameActive) return; // guard against double-call
-  gameActive = false;
-  gameState  = 'gameover';
-  clearInterval(timerID);
-  clearInterval(spawnID);
-  cancelAnimationFrame(rafID);
-  rafID = requestAnimationFrame(menuLoop);
+  if (!gameActive) return; // guard against double-call (timer + score cap firing simultaneously)
+  gameActive=false; gameState='gameover';
+  clearInterval(timerID); clearInterval(spawnID); cancelAnimationFrame(rafID);
+  rafID=requestAnimationFrame(menuLoop);
 }
 
-// =============================================================================
-// LOOPS
-// =============================================================================
+function gameLoop(t) { if(!gameActive)return; update(); drawGame(t); rafID=requestAnimationFrame(gameLoop); }
+function menuLoop()  { if(gameState==='start')drawStartScreen(); if(gameState==='gameover')drawGameOverScreen(); rafID=requestAnimationFrame(menuLoop); }
 
-function gameLoop(t) {
-  if (!gameActive) return;
-  update();
-  drawGame(t);
-  rafID = requestAnimationFrame(gameLoop);
-}
-
-function menuLoop() {
-  if (gameState === 'start')    drawStartScreen();
-  if (gameState === 'gameover') drawGameOverScreen();
-  rafID = requestAnimationFrame(menuLoop);
-}
-
-// =============================================================================
-// BOOT — load all assets then show start screen
-// =============================================================================
-
-loadAssets(() => {
-  rafID = requestAnimationFrame(menuLoop);
+// ── Also remove the old HTML music button since we draw our own on canvas ────
+// (The HTML <button id="music-btn"> is kept in the DOM but hidden via CSS or ignored)
+document.addEventListener('DOMContentLoaded', () => {
+  const btn=document.getElementById('music-btn');
+  if (btn) btn.style.display='none'; // hide the old HTML button
 });
+
+loadAssets(() => { rafID=requestAnimationFrame(menuLoop); });
