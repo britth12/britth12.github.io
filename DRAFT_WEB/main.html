@@ -4,26 +4,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Number Collector</title>
+  <title>Audiomancer</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
-  <!-- Background music — starts on first user click (browser policy) -->
   <audio id="bg-music" src="8BitMusic.mp3" loop preload="auto"></audio>
-
-  <!-- Page wrapper — centers everything -->
   <div id="page-center">
     <div id="game-wrap">
-
-      <!-- Single canvas — all rendering happens here, overlays are drawn on canvas too -->
-      <!-- 800x400: matches 2:1 ratio of Background.png and Floor.png (2816x1408) -->
       <canvas id="canvas" width="1200" height="600"></canvas>
-
-      <!-- Music toggle — always visible over canvas -->
       <button id="music-btn" title="Toggle music">&#9834;</button>
-
     </div>
   </div>
 
