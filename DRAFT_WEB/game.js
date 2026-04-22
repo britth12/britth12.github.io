@@ -11,7 +11,6 @@ const instructLine = 42;
 const instructPrompt = 28;
 const hudLabelH = 28;
 const hudNumH = 38;
-const hudTimeGap = 20;
 const endGameover = 90;
 const endTraveler = 30;
 const endScore = 120;
@@ -27,7 +26,7 @@ const exitAboveFloor = 60;
 const exitSignOffset = 14;
 const exitSignOpacity = 0.80;
 const exitDoorExtra = 10;
-const submitGap = 18;
+const submitGap = 90;
 
 const assets = {};
 let assetsLoaded = 0, assetsTotal = 0;
@@ -47,6 +46,7 @@ const assetList = [
   {key:'musicBtn',   src:'MusicButton.png'},
   {key:'exit',       src:'Exit.png'},
   {key:'submitBtn',  src:'SubmitButton.png'},
+  {key:'replayBtn',   src:'Replay.png'},
   ...alphabet.split('').map(l => ({key:'lr_'+l, src:'Letters/'+l+'.png'})),
   ...Object.entries(numNames).map(([d,n]) => ({key:'num_'+d, src:'Numbers/'+n+'.png'})),
 ];
@@ -272,18 +272,18 @@ function resetPlayer() {
 
 const keys={};
 window.addEventListener('keydown', e => {
-  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD'].includes(e.code)) e.preventDefault();
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD','Enter'].includes(e.code)) e.preventDefault();
   keys[e.code]=true;
-  if (gameState==='start' && e.code==='Space') goToInstructions();
-  if (gameState==='instructions' && e.code==='Enter') startGame();
+  if (gameState==='start' && e.code==='Enter') goToInstructions();
+  else if (gameState==='instructions' && e.code==='Enter') startGame();
   if (gameState==='playing' && e.code==='Space') toggleEvilMode();
 });
 window.addEventListener('keyup', e => { keys[e.code]=false; });
 
-const gameDuration=40, spawnMs=1600, maxNumbers=5, maxScore=100;
-let score=0, timeLeft=gameDuration, gameActive=false, gameState='start';
+const spawnMs=1600, maxNumbers=5, maxScore=100;
+let score=0, gameActive=false, gameState='start';
 let evilMode=false;
-let numbers=[], timerID=null, spawnID=null, rafID=null, playedOnce=false;
+let numbers=[], spawnID=null, rafID=null;
 const minSpawnDist=collectSize*2;
 
 function spawnNumber() {
@@ -300,11 +300,17 @@ function spawnNumber() {
 }
 
 function drawNumbers(now) {
+  const glowColor = evilMode ? '#4fc3f7' : '#ffd700';
   for (const n of numbers) {
     const by=Math.sin(now+n.bob)*5, img=assets['num_'+n.value];
-    ctx.save(); ctx.shadowColor='#ffd700'; ctx.shadowBlur=14;
-    if (img?.naturalWidth) ctx.drawImage(img,Math.round(n.x-collectSize/2),Math.round(n.y+by-collectSize/2),collectSize,collectSize);
-    else { ctx.font=`bold ${collectSize}px monospace`; ctx.fillStyle='#ffd700'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(n.value,n.x,n.y+by); }
+    const dx=Math.round(n.x-collectSize/2), dy=Math.round(n.y+by-collectSize/2);
+    ctx.save();
+    ctx.shadowColor=glowColor; ctx.shadowBlur=18;
+    ctx.fillStyle=glowColor;
+    ctx.fillRect(dx, dy, collectSize, collectSize);
+    ctx.shadowBlur=0;
+    if (img?.naturalWidth) ctx.drawImage(img,dx,dy,collectSize,collectSize);
+    else { ctx.font=`bold ${collectSize}px monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(n.value,n.x,n.y+by); }
     ctx.restore();
   }
 }
@@ -333,7 +339,7 @@ function toggleEvilMode() {
 
 const mbtnSize=44;
 const musicBtnRect={x:W-mbtnSize-10, y:H-mbtnSize-10, w:mbtnSize, h:mbtnSize};
-const submitBtnW=134, submitBtnH=48;
+const submitBtnW=134, submitBtnH=48, btnGap=16;
 
 canvas.addEventListener('click', e => {
   const r=canvas.getBoundingClientRect();
@@ -345,8 +351,12 @@ canvas.addEventListener('click', e => {
     else { music.volume=0.4; music.play().catch(()=>{}); }
   }
   if (gameState==='gameover') {
-    const sbx=(W-submitBtnW)/2, sby=submitBtnY();
-    if (mx>=sbx&&mx<=sbx+submitBtnW&&my>=sby&&my<=sby+submitBtnH) alert('Your volume is '+score);
+    const by=submitBtnY();
+    const rowW=submitBtnW*2+btnGap;
+    const rx=Math.round(W/2-rowW/2);
+    const inRow = my>=by && my<=by+submitBtnH;
+    if (inRow && mx>=rx && mx<=rx+submitBtnW) replayGame();
+    if (inRow && mx>=rx+submitBtnW+btnGap && mx<=rx+rowW) alert('Your volume is '+score);
   }
 });
 
@@ -400,9 +410,6 @@ function drawHUD() {
   ctx.shadowBlur=0;
   drawStr(12,8,'SCORE',hudLabelH,'left');
   drawDigitStr(12+measureStr('SCORE',hudLabelH)+8, 8+Math.round((hudLabelH-hudNumH)/2), score, hudNumH,'left');
-  const tnw=measureDigitStr(timeLeft,hudNumH);
-  drawDigitStr(W-12, 8+Math.round((hudLabelH-hudNumH)/2), timeLeft, hudNumH,'right');
-  drawStr(W-12-tnw-hudTimeGap, 8,'TIME',hudLabelH,'right');
   drawMusicBtn();
 }
 
@@ -410,7 +417,7 @@ function drawStartScreen() {
   drawBG(menuOverlay); scanlines(); drawBorder();
   drawStr(W/2, Math.round(H*0.35-startTitle/2), 'AUDIOMANCER', startTitle,'center');
   ctx.globalAlpha=0.6+0.4*Math.sin(Date.now()*0.004);
-  drawStr(W/2, H-80,'PRESS SPACE',startPrompt,'center');
+  drawStr(W/2, H-80,'PRESS ENTER',startPrompt,'center');
   ctx.globalAlpha=1;
 }
 
@@ -438,8 +445,12 @@ function drawGameOverScreen() {
   const sy=gy+endGameover*2+30;
   drawStr(W/2, sy,                  'TRAVELER YOUR VOLUME IS', endTraveler,'center');
   drawDigitStr(W/2, sy+endTraveler+14, score, endScore,'center');
-  const img=assets.submitBtn;
-  if (img?.naturalWidth) ctx.drawImage(img,(W-submitBtnW)/2,submitBtnY(),submitBtnW,submitBtnH);
+  const by=submitBtnY();
+  const rowW=submitBtnW*2+btnGap;
+  const rx=Math.round(W/2-rowW/2);
+  const si=assets.replayBtn, sm=assets.submitBtn;
+  if (si?.naturalWidth) ctx.drawImage(si,  rx,                         by, submitBtnW, submitBtnH);
+  if (sm?.naturalWidth) ctx.drawImage(sm,  rx+submitBtnW+btnGap,       by, submitBtnW, submitBtnH);
 }
 
 function drawGame(t) {
@@ -453,14 +464,17 @@ function goToInstructions() {
   rafID=requestAnimationFrame(menuLoop);
 }
 
+function replayGame() {
+  evilMusic.pause(); music.pause();
+  startGame();
+}
+
 function startGame() {
-  if (playedOnce) return; playedOnce=true;
-  cancelAnimationFrame(rafID); clearInterval(timerID); clearInterval(spawnID);
-  score=0; timeLeft=gameDuration; numbers=[];
+  cancelAnimationFrame(rafID); clearInterval(spawnID);
+  score=0; numbers=[];
   gameState='playing'; gameActive=true;
   resetPlayer(); spawnNumber();
   startMusic();
-  timerID=setInterval(()=>{ if(--timeLeft<=0) endGame(); },1000);
   spawnID=setInterval(spawnNumber,spawnMs);
   rafID=requestAnimationFrame(gameLoop);
 }
@@ -469,7 +483,7 @@ function endGame() {
   if (!gameActive) return;
   gameActive=false; gameState='gameover';
   evilMusic.pause(); music.pause();
-  clearInterval(timerID); clearInterval(spawnID); cancelAnimationFrame(rafID);
+  clearInterval(spawnID); cancelAnimationFrame(rafID);
   rafID=requestAnimationFrame(menuLoop);
 }
 
