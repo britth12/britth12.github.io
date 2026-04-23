@@ -426,7 +426,7 @@ function drawInstructionsScreen() {
   const lineGap=instructLine+24, topY=Math.round(H*0.3);
   drawStr(W/2, topY,           'ARROW KEYS TO MOVE',                    instructLine,'center');
   drawStr(W/2, topY+lineGap,   'COLLECT AS MANY VOLUME SPELLS',         instructLine,'center');
-  drawStr(W/2, topY+lineGap*2, 'AS YOU CAN IN THIRTY SECONDS',          instructLine,'center');
+  drawStr(W/2, topY+lineGap*2, 'AS YOU CAN',          instructLine,'center');
   drawStr(W/2, topY+lineGap*3, 'PRESS SPACE TO ENTER EVIL DECREASE MODE', instructLine,'center');
   ctx.globalAlpha=0.6+0.4*Math.sin(Date.now()*0.004);
   drawStr(W/2, H-80,'PRESS ENTER TO START',instructPrompt,'center');
