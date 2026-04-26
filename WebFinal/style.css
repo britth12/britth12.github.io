@@ -32,10 +32,10 @@ canvas {
 
 #credits {
   position: fixed;
-  bottom: 80px;
-  right: 80px;
+  bottom: 40px;
+  right: 40px;
   font-family: 'Courier New', Courier, monospace;
-  font-size: 24px;
+  font-size: 20px;
   color: rgba(255, 255, 255, 0.75);
   text-align: right;
   line-height: 1.6;
