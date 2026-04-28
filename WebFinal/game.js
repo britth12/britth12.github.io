@@ -158,6 +158,10 @@ function tickWizard(state, t) {
   }
 
   const delay = state === 'walk' ? wizWalkDly : wizIdleDly;
+  if (wizLastTime === 0) {
+    wizLastTime = t;
+    return;
+  }
   if (t - wizLastTime >= delay) {
     wizLastTime = t;
     wizFrame = (wizFrame + 1) % wizFrames;
