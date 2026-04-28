@@ -146,21 +146,20 @@ function computeLetterAspectRatios() {
 }
 
 const wizFrames = 5;
-const wizIdleDly = 12;
-const wizWalkDly = 5;
+const wizIdleDly = 80;
+const wizWalkDly = 80;
 let wizFrame = 0;
-let wizTick = 0;
+let wizLastTime = 0;
 
-function tickWizard(state, dt) {
+function tickWizard(state, t) {
   if (state === 'jump') {
     wizFrame = 2;
     return;
   }
 
   const delay = state === 'walk' ? wizWalkDly : wizIdleDly;
-  wizTick++;
-  if (wizTick >= delay) {
-    wizTick = 0;
+  if (t - wizLastTime >= delay) {
+    wizLastTime = t;
     wizFrame = (wizFrame + 1) % wizFrames;
   }
 }
@@ -392,7 +391,7 @@ function resetPlayer() {
   player.facing = 1;
   player.dropThrough = 0;
   wizFrame = 0;
-  wizTick = 0;
+  wizLastTime = 0;
   evilMode = false;
 }
 
@@ -582,7 +581,7 @@ function drawMusicBtn() {
   ctx.globalAlpha = 1;
 }
 
-function update(dt = 1) {
+function update(dt = 1, t=0) {
   const goingLeft = keys['ArrowLeft'] || keys['KeyA'];
   const goingRight = keys['ArrowRight'] || keys['KeyD'];
   const goingDown = keys['ArrowDown'] || keys['KeyS'];
@@ -644,7 +643,7 @@ function update(dt = 1) {
   }
 
   const wizState = !player.onGround ? 'jump' : (goingLeft || goingRight) ? 'walk' : 'idle';
-  tickWizard(wizState, dt);
+  tickWizard(wizState, t);
 
   const hr = collectSize / 2 + 6;
   const remaining = [];
@@ -789,7 +788,7 @@ function gameLoop(t) {
   if (!gameActive) return;
   const dt = lastTime ? Math.min((t - lastTime) / (1000 / 60), 3) : 1;
   lastTime = t;
-  update(dt);
+  update(dt, t);
   drawGame(t);
   rafID = requestAnimationFrame(gameLoop);
 }
