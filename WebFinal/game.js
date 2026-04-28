@@ -811,11 +811,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function fitCanvas() {
   const wrap = document.getElementById('game-wrap');
+  const canvas = document.getElementById('canvas');
   const scaleX = (window.innerWidth - 64) / 1100;
   const scaleY = (window.innerHeight - 64) / 550;
   const scale = Math.min(1.0, scaleX, scaleY);
-  wrap.style.width = Math.round(1100 * scale) + 'px';
-  wrap.style.height = Math.round(550 * scale) + 'px';
+  const w = Math.round(1100 * scale);
+  const h = Math.round(550 * scale);
+  wrap.style.width = w + 'px';
+  wrap.style.height = h + 'px';
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
 }
 fitCanvas();
 window.addEventListener('resize', fitCanvas);
