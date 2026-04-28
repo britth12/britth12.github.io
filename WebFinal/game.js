@@ -19,7 +19,7 @@ const collectSize = 36;
 const plankH = 22;
 const gravity = 0.65;
 const jumpForce = -12;
-const playerSpeed = 8;
+const playerSpeed = 6;
 const lgapBase = 3;
 const lspcBase = 10;
 const exitAboveFloor = 10;
@@ -151,7 +151,7 @@ const wizWalkDly = 5;
 let wizFrame = 0;
 let wizTick = 0;
 
-function tickWizard(state) {
+function tickWizard(state, dt) {
   if (state === 'jump') {
     wizFrame = 2;
     return;
@@ -644,7 +644,7 @@ function update(dt = 1) {
   }
 
   const wizState = !player.onGround ? 'jump' : (goingLeft || goingRight) ? 'walk' : 'idle';
-  tickWizard(wizState);
+  tickWizard(wizState, dt);
 
   const hr = collectSize / 2 + 6;
   const remaining = [];
