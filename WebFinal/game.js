@@ -19,7 +19,7 @@ const collectSize = 36;
 const plankH = 22;
 const gravity = 0.65;
 const jumpForce = -12;
-const playerSpeed = 6;
+const playerSpeed = 8;
 const lgapBase = 3;
 const lspcBase = 10;
 const exitAboveFloor = 10;
@@ -31,24 +31,23 @@ const assets = {};
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 const numNames = {
-  0: 'Zero', 1: 'One', 2: 'Two', 3: 'Three', 4: 'Four',
-  5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine'
+  0: 'Zero', 1: 'One', 2: 'Two', 3: 'Three', 4: 'Four', 5: 'Five', 6: 'Six', 7: 'Seven', 8: 'Eight', 9: 'Nine'
 };
 
 const assetList = [
-  { key: 'bg',          src: 'Background.png' },
-  { key: 'floor',       src: 'Floor.png' },
-  { key: 'plank1',      src: 'Planks/Plank1.png' },
-  { key: 'plank2',      src: 'Planks/Plank2.png' },
-  { key: 'plank3',      src: 'Planks/Plank3.png' },
-  { key: 'plank4',      src: 'Planks/Plank4.png' },
-  { key: 'plank5',      src: 'Planks/Plank5.png' },
-  { key: 'wizRaw',      src: 'WizWalk.png' },
-  { key: 'evilWizRaw',  src: 'EvilWizWalk.png' },
-  { key: 'musicBtn',    src: 'MusicButton.png' },
-  { key: 'exit',        src: 'Exit.png' },
-  { key: 'submitBtn',   src: 'SubmitButton.png' },
-  { key: 'replayBtn',   src: 'Replay.png' },
+  { key: 'bg', src: 'Background.png' },
+  { key: 'floor', src: 'Floor.png' },
+  { key: 'plank1', src: 'Planks/Plank1.png' },
+  { key: 'plank2', src: 'Planks/Plank2.png' },
+  { key: 'plank3', src: 'Planks/Plank3.png' },
+  { key: 'plank4', src: 'Planks/Plank4.png' },
+  { key: 'plank5', src: 'Planks/Plank5.png' },
+  { key: 'wizRaw', src: 'WizWalk.png' },
+  { key: 'evilWizRaw', src: 'EvilWizWalk.png' },
+  { key: 'musicBtn', src: 'MusicButton.png' },
+  { key: 'exit', src: 'Exit.png' },
+  { key: 'submitBtn', src: 'SubmitButton.png' },
+  { key: 'replayBtn', src: 'Replay.png' },
   ...alphabet.split('').map(l => ({ key: 'lc_' + l, src: 'Letters/' + l + '.png' })),
   ...Object.entries(numNames).map(([d, n]) => ({ key: 'num_' + d, src: 'Numbers/' + n + '.png' })),
 ];
@@ -77,8 +76,8 @@ function loadAssets(onDone) {
 }
 
 const wizFrameRegions = [
-  [9,  81],
-  [93,  165],
+  [9, 81],
+  [93, 165],
   [177, 249],
   [261, 333],
   [345, 417],
@@ -168,8 +167,8 @@ function tickWizard(state) {
 
 function drawWizard() {
   const sheet = evilMode ? assets.evilWiz : assets.wiz;
-  const CW    = evilMode ? assets.evilWizCellW : assets.wizCellW;
-  const CH    = evilMode ? assets.evilWizCellH : assets.wizCellH;
+  const CW = evilMode ? assets.evilWizCellW : assets.wizCellW;
+  const CH = evilMode ? assets.evilWizCellH : assets.wizCellH;
 
   if (!sheet) {
     ctx.fillStyle = '#4fc3f7';
@@ -322,14 +321,14 @@ function plankW(key) {
 }
 
 const platforms = [
-  { x: 0,   y: 481, h: 69,    plank: null },
-  { x: 73,  y: 381, h: plankH, plank: 'plank1' },
+  { x: 0, y: 481, h: 69, plank: null },
+  { x: 73, y: 381, h: plankH, plank: 'plank1' },
   { x: 440, y: 381, h: plankH, plank: 'plank3' },
   { x: 825, y: 381, h: plankH, plank: 'plank5' },
   { x: 165, y: 289, h: plankH, plank: 'plank2' },
   { x: 477, y: 284, h: plankH, plank: 'plank4' },
   { x: 798, y: 284, h: plankH, plank: 'plank1' },
-  { x: 46,  y: 193, h: plankH, plank: 'plank3' },
+  { x: 46, y: 193, h: plankH, plank: 'plank3' },
   { x: 404, y: 188, h: plankH, plank: 'plank5' },
   { x: 844, y: 193, h: plankH, plank: 'plank2' },
   { x: 238, y: 106, h: plankH, plank: 'plank4' },
@@ -377,7 +376,7 @@ function drawExit() {
 const spawnY = 481 - 66;
 const player = {
   x: 537, y: spawnY,
-  w: 42,  h: 66,
+  w: 42, h: 66,
   vx: 0, vy: 0,
   onGround: false,
   facing: 1,
@@ -400,7 +399,7 @@ function resetPlayer() {
 const keys = {};
 
 window.addEventListener('keydown', e => {
-  const handled = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyW','KeyA','KeyS','KeyD','Enter'];
+  const handled = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'Enter'];
   if (handled.includes(e.code)) e.preventDefault();
   keys[e.code] = true;
 
@@ -484,14 +483,14 @@ function drawNumbers(now) {
   }
 }
 
-const music     = document.getElementById('bg-music');
+const music = document.getElementById('bg-music');
 const evilMusic = document.getElementById('evil-music');
 let musicMuted = false;
 
 function startMusic() {
   if (!musicMuted) {
     music.volume = 0.4;
-    music.play().catch(() => {});
+    music.play().catch(() => { });
   }
 }
 
@@ -511,10 +510,10 @@ function toggleEvilMode() {
     music.pause();
     evilMusic.currentTime = 0;
     evilMusic.volume = 0.4;
-    evilMusic.play().catch(() => {});
+    evilMusic.play().catch(() => { });
   } else {
     evilMusic.pause();
-    music.play().catch(() => {});
+    music.play().catch(() => { });
   }
 }
 
@@ -527,7 +526,7 @@ const btnGap = 45;
 canvas.addEventListener('click', e => {
   const r = canvas.getBoundingClientRect();
   const mx = (e.clientX - r.left) * (W / r.width);
-  const my = (e.clientY - r.top)  * (H / r.height);
+  const my = (e.clientY - r.top) * (H / r.height);
 
   const mb = musicBtnRect;
   if (mx >= mb.x && mx <= mb.x + mb.w && my >= mb.y && my <= mb.y + mb.h) {
@@ -537,19 +536,19 @@ canvas.addEventListener('click', e => {
       evilMusic.pause();
     } else if (evilMode) {
       evilMusic.volume = 0.4;
-      evilMusic.play().catch(() => {});
+      evilMusic.play().catch(() => { });
     } else {
       music.volume = 0.4;
-      music.play().catch(() => {});
+      music.play().catch(() => { });
     }
     return;
   }
 
   if (gameState === 'gameover') {
-    const by     = submitBtnY();
-    const rowW   = submitBtnW * 2 + btnGap;
-    const rx     = Math.round(W / 2 - rowW / 2);
-    const inRow  = my >= by && my <= by + submitBtnH;
+    const by = submitBtnY();
+    const rowW = submitBtnW * 2 + btnGap;
+    const rx = Math.round(W / 2 - rowW / 2);
+    const inRow = my >= by && my <= by + submitBtnH;
 
     if (inRow && mx >= rx && mx <= rx + submitBtnW) {
       replayGame();
@@ -584,9 +583,9 @@ function drawMusicBtn() {
 }
 
 function update(dt = 1) {
-  const goingLeft  = keys['ArrowLeft']  || keys['KeyA'];
+  const goingLeft = keys['ArrowLeft'] || keys['KeyA'];
   const goingRight = keys['ArrowRight'] || keys['KeyD'];
-  const goingDown  = keys['ArrowDown']  || keys['KeyS'];
+  const goingDown = keys['ArrowDown'] || keys['KeyS'];
 
   if (goingLeft) {
     player.vx = -playerSpeed * dt;
@@ -618,10 +617,10 @@ function update(dt = 1) {
 
     if (player.dropThrough > 0 && p.plank !== null) continue;
 
-    const wasAbove   = prevBottom <= p.y + 1;
-    const nowBelow   = curBottom >= p.y;
+    const wasAbove = prevBottom <= p.y + 1;
+    const nowBelow = curBottom >= p.y;
     const fallingDown = player.vy >= 0;
-    const overlapX   = player.x + player.w > p.x + 2 && player.x < p.x + pw - 2;
+    const overlapX = player.x + player.w > p.x + 2 && player.x < p.x + pw - 2;
 
     if (fallingDown && wasAbove && nowBelow && overlapX) {
       player.y = p.y - player.h;
@@ -699,10 +698,10 @@ function drawInstructionsScreen() {
   const lineGap = instructLine + 30;
   const topY = Math.round(H * 0.15);
 
-  drawStr(W / 2, topY,                'ARROW KEYS TO MOVE',                       instructLine, 'center');
-  drawStr(W / 2, topY + lineGap,      'COLLECT AS MANY VOLUME SPELLS',            instructLine, 'center');
-  drawStr(W / 2, topY + lineGap * 2,  'AS YOU WANT THEN EXIT',                    instructLine, 'center');
-  drawStr(W / 2, topY + lineGap * 3,  'PRESS SPACE TO ENTER EVIL SUBTRACT MODE',  instructLine, 'center');
+  drawStr(W / 2, topY, 'ARROW KEYS TO MOVE', instructLine, 'center');
+  drawStr(W / 2, topY + lineGap, 'COLLECT AS MANY VOLUME SPELLS', instructLine, 'center');
+  drawStr(W / 2, topY + lineGap * 2, 'AS YOU WANT THEN EXIT', instructLine, 'center');
+  drawStr(W / 2, topY + lineGap * 3, 'PRESS SPACE TO ENTER EVIL SUBTRACT MODE', instructLine, 'center');
 
   ctx.globalAlpha = 0.6 + 0.4 * Math.sin(Date.now() * 0.004);
   drawStr(W / 2, H - 80, 'PRESS ENTER TO START', instructPrompt, 'center');
@@ -719,16 +718,16 @@ function drawGameOverScreen() {
   drawBorder();
 
   const gy = 32;
-  drawStr(W / 2, gy,                  'GAME', endGameover, 'center');
+  drawStr(W / 2, gy, 'GAME', endGameover, 'center');
   drawStr(W / 2, gy + endGameover + 10, 'OVER', endGameover, 'center');
 
   const sy = gy + endGameover * 2 + 30;
   drawStr(W / 2, sy, 'TRAVELER YOUR VOLUME IS', endTraveler, 'center');
   drawDigitStr(W / 2, sy + endTraveler + 27, score, endScore, 'center');
 
-  const by   = submitBtnY();
+  const by = submitBtnY();
   const rowW = submitBtnW * 2 + btnGap;
-  const rx   = Math.round(W / 2 - rowW / 2);
+  const rx = Math.round(W / 2 - rowW / 2);
 
   if (assets.replayBtn && assets.replayBtn.naturalWidth) {
     ctx.drawImage(assets.replayBtn, rx, by, submitBtnW, submitBtnH);
@@ -796,9 +795,9 @@ function gameLoop(t) {
 }
 
 function menuLoop() {
-  if (gameState === 'start')        drawStartScreen();
+  if (gameState === 'start') drawStartScreen();
   if (gameState === 'instructions') drawInstructionsScreen();
-  if (gameState === 'gameover')     drawGameOverScreen();
+  if (gameState === 'gameover') drawGameOverScreen();
   rafID = requestAnimationFrame(menuLoop);
 }
 
@@ -812,7 +811,7 @@ function fitCanvas() {
   const scaleX = (window.innerWidth - 64) / 1100;
   const scaleY = (window.innerHeight - 64) / 550;
   const scale = Math.min(1.0, scaleX, scaleY);
-  wrap.style.width  = Math.round(1100 * scale) + 'px';
+  wrap.style.width = Math.round(1100 * scale) + 'px';
   wrap.style.height = Math.round(550 * scale) + 'px';
 }
 fitCanvas();
