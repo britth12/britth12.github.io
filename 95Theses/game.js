@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 const W = canvas.width, H = canvas.height;
 ctx.imageSmoothingEnabled = false;
 
+//The Magic Numbers
 const menuOverlay = 0.96;
 const gameOverlay = 0.52;
 const startTitle = 110;
@@ -17,16 +18,15 @@ const endScore = 120;
 const wizTargetH = 100;
 const collectSize = 36;
 const plankH = 22;
-const gravity = 0.65;
+const gravity = 0.62;
 const jumpForce = -12;
 const playerSpeed = 6;
 const lgapBase = 3;
 const lspcBase = 10;
 const exitAboveFloor = 10;
-const exitSignOffset = 10;
-const exitSignOpacity = 0.99;
 const submitGap = 40;
 
+const submitBtnY = 32 + endGameover * 2 + 30 + endTraveler + 14 + endScore + submitGap;
 const assets = {};
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -92,10 +92,8 @@ function buildWizSheet(raw, cellWKey, cellHKey, sheetKey) {
   const tempCanvas = document.createElement('canvas');
   tempCanvas.width = raw.naturalWidth;
   tempCanvas.height = raw.naturalHeight;
-  const tempCtx = tempCanvas.getContext('2d');
-  tempCtx.drawImage(raw, 0, 0);
+  tempCanvas.getContext('2d').drawImage(raw, 0, 0);
 
-  const IW = tempCanvas.width;
   const IH = tempCanvas.height;
 
   const TH = wizTargetH;
@@ -146,7 +144,7 @@ function computeLetterAspectRatios() {
 }
 
 const wizFrames = 5;
-const wizIdleDly = 80;
+const wizIdleDly = 70;
 const wizWalkDly = 80;
 let wizFrame = 0;
 let wizLastTime = 0;
@@ -364,10 +362,10 @@ function drawExit() {
 
   const img = assets.exit;
   if (img && img.naturalWidth) {
-    ctx.globalAlpha = exitSignOpacity;
+    ctx.globalAlpha = 0.9;
     ctx.drawImage(
       img,
-      W - img.naturalWidth - exitSignOffset,
+      W - img.naturalWidth - 10,
       exitTop - img.naturalHeight - exitAboveFloor,
       img.naturalWidth,
       img.naturalHeight
@@ -548,7 +546,7 @@ canvas.addEventListener('click', e => {
   }
 
   if (gameState === 'gameover') {
-    const by = submitBtnY();
+    const by = submitBtnY;
     const rowW = submitBtnW * 2 + btnGap;
     const rx = Math.round(W / 2 - rowW / 2);
     const inRow = my >= by && my <= by + submitBtnH;
@@ -581,7 +579,7 @@ function drawMusicBtn() {
       musicBtnRect.y + musicBtnRect.h / 2
     );
   }
-
+  
   ctx.globalAlpha = 1;
 }
 
@@ -711,10 +709,6 @@ function drawInstructionsScreen() {
   ctx.globalAlpha = 1;
 }
 
-function submitBtnY() {
-  return 32 + endGameover * 2 + 30 + endTraveler + 14 + endScore + submitGap;
-}
-
 function drawGameOverScreen() {
   drawBG(menuOverlay);
   scanlines();
@@ -728,7 +722,7 @@ function drawGameOverScreen() {
   drawStr(W / 2, sy, 'TRAVELER YOUR VOLUME IS', endTraveler, 'center');
   drawDigitStr(W / 2, sy + endTraveler + 27, score, endScore, 'center');
 
-  const by = submitBtnY();
+  const by = submitBtnY;
   const rowW = submitBtnW * 2 + btnGap;
   const rx = Math.round(W / 2 - rowW / 2);
 
@@ -812,8 +806,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function fitCanvas() {
   const wrap = document.getElementById('game-wrap');
   const canvas = document.getElementById('canvas');
-  const targetW = window.innerWidth * 0.55;
-  const targetH = window.innerHeight * 0.55;
+  const targetW = window.innerWidth * 0.58;
+  const targetH = window.innerHeight * 0.58;
   const scale = Math.min(targetW / 1100, targetH / 550);
   const w = Math.round(1100 * scale);
   const h = Math.round(550 * scale);
