@@ -585,7 +585,7 @@ function drawMusicBtn() {
   ctx.globalAlpha = 1;
 }
 
-function update(dt = 1, t=0) {
+function update(dt = 1, t = 0) {
   const goingLeft = keys['ArrowLeft'] || keys['KeyA'];
   const goingRight = keys['ArrowRight'] || keys['KeyD'];
   const goingDown = keys['ArrowDown'] || keys['KeyS'];
@@ -792,7 +792,7 @@ function gameLoop(t) {
   if (!gameActive) return;
   const dt = lastTime ? Math.min((t - lastTime) / (1000 / 60), 3) : 1;
   lastTime = t;
-  update(dt, t);
+  update(Math.min(dt, 1), t);
   drawGame(t);
   rafID = requestAnimationFrame(gameLoop);
 }
@@ -812,9 +812,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function fitCanvas() {
   const wrap = document.getElementById('game-wrap');
   const canvas = document.getElementById('canvas');
-  const scaleX = (window.innerWidth - 64) / 1100;
-  const scaleY = (window.innerHeight - 64) / 550;
-  const scale = Math.min(1.0, scaleX, scaleY);
+  const targetW = window.innerWidth * 0.55;
+  const targetH = window.innerHeight * 0.55;
+  const scale = Math.min(targetW / 1100, targetH / 550);
   const w = Math.round(1100 * scale);
   const h = Math.round(550 * scale);
   wrap.style.width = w + 'px';
